@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.7.0 <0.9.0;
 
+//import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
 import {Ownable} from "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
 import {CasinoToken} from "./CasinoToken.sol";
 
@@ -18,7 +19,8 @@ contract Casino is Ownable {
     /// @notice Amount of tokens in the prize pool
     uint256 public prizePool;
 
-    bool guess;   
+
+    //event FlipResult(bool result, address player);
 
 
     /// @notice Constructor function
@@ -26,17 +28,20 @@ contract Casino is Ownable {
     // /// @param tokenSymbol Symbol of the token used for payment
     /// @param _purchaseRatio Amount of tokens given per ETH paid
     /// @param _playPrice Amount of tokens required for placing a play that goes for the prize pool
+    
     constructor(
         //string memory tokenName,
         //string memory tokenSymbol,
         uint256 _purchaseRatio,
-        uint256 _playPrice
-        //uint256 _playFee
+        uint256 _playPrice,
+        uint256 _prizePool
     ) {
         // paymentToken = new CasinoToken(tokenName, tokenSymbol);
         paymentToken = new CasinoToken();
         purchaseRatio = _purchaseRatio;
         playPrice = _playPrice;
+        prizePool = _prizePool;
+       
     }
 
 
@@ -45,39 +50,34 @@ contract Casino is Ownable {
         paymentToken.mint(msg.sender, msg.value * purchaseRatio);
     }
 
-    /// @notice Charges the play price and run the flip coin game
-    function play() public {
-        prizePool += playPrice;
-        flipCoin(guess);
-        paymentToken.transferFrom(msg.sender, address(this), playPrice);
-    }
 
-
-    ///@notice Returns the single flip coin result
-    function flipCoin(bool _guess) public payable {
-        require(msg.value > 0, "You must send some ETH/token to play the game!");
-
-        //ADJUST THE WIN RATE!!!!!!!!
-        require(prizePool >= msg.value * 2, "Sorry, the contract does not have enough balance for this game.");
+    function flipCoin() external payable{
+        require (msg.value >= playPrice, "Not enough T7E sent");
+        require (prizePool >= playPrice, "Not enough T7E in the prize pool");
+        require (paymentToken.approve(address(this), msg.value),"Approve failed");
+        require(paymentToken.transferFrom(msg.sender, address(this), playPrice), "Payment failed"); // transfer T7E tokens from player to contract
         
-        bool result = getRandomNumber();
+    
         
-        if (result == _guess) {
-            //The winner gets 2 times the amount of the play rate
-            uint256 payout = msg.value * 2;
-            prizePool -= payout;
-            paymentToken.transfer(msg.sender, payout);
-        } else {
-            prizePool += msg.value;
+        bool result = getRandomNumber(); // flip a coin to get the result
+        //emit FlipResult(result, msg.sender); // log the result of the flip
+        if (result==false) {
+            // if the result is heads, transfer the payout to the player
+            prizePool -= playPrice * 2;
+            require(paymentToken.transfer(msg.sender, playPrice * 2), "Impossible to pay the win - Transfer failed"); 
         }
+        else 
+        prizePool += playPrice;
+        
     }
+
 
     /// @notice Returns a random number calculated from the previous block randao
     /// @dev This only works after The Merge
     function getRandomNumber() public view returns (bool) {
         uint256 randomNumber;
         randomNumber = block.prevrandao;
-        return randomNumber % 2 == 0 ? true : false;
+        return randomNumber % 2 == 0 ? false: true; // return true for heads (1) and false for tails (0)
     }
 
     // /// @notice Withdraws `amount` from that accounts's prize pool
