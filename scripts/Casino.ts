@@ -80,11 +80,6 @@ async function main() {
     signer.address,
     "\n"
   );
-  //}
-
-  // async function initAccounts() {
-  //   accounts = await ethers.getSigners();
-  // }
 
   // Get the ETH balance of the signer
   //async function displayBalance(address: string) {
