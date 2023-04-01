@@ -4,14 +4,17 @@ pragma solidity >=0.7.0 <0.9.0;
 //import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {CasinoToken} from "./CasinoToken.sol";
+import {Staking} from "./Staking.sol";
 
 /// @title A casino contract
 /// @author Team 7 - Encode Bootcampo Early
 /// @notice You can use this contract for running a simple casino
 
 contract Casino is Ownable {
-    /// @notice Address of the token used as payment for the play
+    /// @notice Contract of the token used as payment for the play
     CasinoToken public paymentToken;
+    /// @notice Contract used for staking the tokens
+    Staking public stakingContract;
     /// @notice Amount of tokens given per ETH paid
     uint256 public purchaseRatio;
     /// @notice Amount of tokens required for 1 single play
@@ -37,7 +40,7 @@ contract Casino is Ownable {
         uint256 _prizePool
     ) {
         paymentToken = new CasinoToken(tokenName, tokenSymbol);
-        //paymentToken = new CasinoToken();
+        stakingContract = new Staking(address(paymentToken));
         purchaseRatio = _purchaseRatio;
         playPrice = _playPrice;
         prizePool = _prizePool;

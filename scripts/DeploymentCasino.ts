@@ -2,8 +2,10 @@ import { ethers } from "hardhat";
 import {
   Casino,
   CasinoToken,
+  Staking,
   CasinoToken__factory,
   Casino__factory,
+  Staking__factory,
 } from "../typechain-types";
 
 import * as dotenv from "dotenv";
@@ -11,6 +13,7 @@ dotenv.config();
 
 let contract: Casino;
 let token: CasinoToken;
+let staking: Staking;
 //let accounts: SignerWithAddress[];
 
 let signer;
@@ -55,9 +58,14 @@ async function main() {
     ethers.utils.parseEther(PRIZE_POOL.toFixed(18))
   );
 
-  const tokenAddress = await contract.paymentToken();
+  const tokenContract = await contract.paymentToken();
   const tokenFactory = new CasinoToken__factory(signer);
-  token = tokenFactory.attach(tokenAddress);
+  token = tokenFactory.attach(tokenContract);
+
+  
+  const stakingContract = await contract.stakingContract();
+  const stakingFactory = new Staking__factory(signer);
+  staking = stakingFactory.attach(stakingContract);
 
   const deployTransactionReceipt = await contract.deployTransaction.wait();
   console.log(
@@ -72,7 +80,14 @@ async function main() {
   console.log(
     "The Token contract address is:",
     token.address,
-    "by",
+    "and was deployed by",
+    signer.address,
+    "\n"
+  );
+  console.log(
+    "The Staking contract address is:",
+    staking.address,
+    "and was deployed by",
     signer.address,
     "\n"
   );
