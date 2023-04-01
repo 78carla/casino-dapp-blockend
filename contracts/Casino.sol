@@ -2,7 +2,7 @@
 pragma solidity >=0.7.0 <0.9.0;
 
 //import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
-import {Ownable} from "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {CasinoToken} from "./CasinoToken.sol";
 
 /// @title A casino contract
@@ -30,14 +30,14 @@ contract Casino is Ownable {
     /// @param _playPrice Amount of tokens required for placing a play that goes for the prize pool
     
     constructor(
-        //string memory tokenName,
-        //string memory tokenSymbol,
+        string memory tokenName,
+        string memory tokenSymbol,
         uint256 _purchaseRatio,
         uint256 _playPrice,
         uint256 _prizePool
     ) {
-        // paymentToken = new CasinoToken(tokenName, tokenSymbol);
-        paymentToken = new CasinoToken();
+        paymentToken = new CasinoToken(tokenName, tokenSymbol);
+        //paymentToken = new CasinoToken();
         purchaseRatio = _purchaseRatio;
         playPrice = _playPrice;
         prizePool = _prizePool;
