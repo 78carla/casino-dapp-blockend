@@ -1,6 +1,6 @@
 //This script deploy an ERC20 token contract to the sepolia network
 import { ethers } from "hardhat";
-import { MyERC20__factory } from "../typechain-types";
+import { CasinoToken__factory } from "../typechain-types";
 import * as dotenv from "dotenv";
 
 dotenv.config();
@@ -29,7 +29,7 @@ async function main() {
 
   //Deploy the smart contract
   console.log("Deploying Token contract:");
-  const myERC20ContractFactory = new MyERC20__factory(signer);
+  const myERC20ContractFactory = new CasinoToken__factory(signer);
   const myERC20Contract = await myERC20ContractFactory.deploy();
   await myERC20Contract.deployed();
 
