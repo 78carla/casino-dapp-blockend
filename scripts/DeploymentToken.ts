@@ -30,7 +30,11 @@ async function main() {
   //Deploy the smart contract
   console.log("Deploying Token contract:");
   const myERC20ContractFactory = new CasinoToken__factory(signer);
-  const myERC20Contract = await myERC20ContractFactory.deploy();
+  const myERC20Contract = await myERC20ContractFactory.deploy(
+    "Team7Early",
+    "T7E"
+  );
+
   await myERC20Contract.deployed();
 
   const deployTxReceipt = await myERC20Contract.deployTransaction.wait();

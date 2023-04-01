@@ -54,6 +54,8 @@ async function main() {
   console.log("Deploying contract ...");
 
   contract = await contractFactory.deploy(
+    "Team7Early",
+    "T7E",
     TOKEN_RATIO,
     ethers.utils.parseEther(PLAY_PRICE.toFixed(18)),
     ethers.utils.parseEther(PRIZE_POOL.toFixed(18))
