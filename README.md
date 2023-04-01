@@ -21,7 +21,7 @@ yarn add ethers@^5.7.2
 npm install --save -dev@nomiclabs/hardhat-etherscan //for verifing the contracts on the blockchain
 
 //For deploying the contract using sepolia network
-yarn hardhat run .scripts/fileName.ts --network sepolia
+yarn hardhat run ./scripts/DeploymentERC20.ts --network sepolia
 
 //For verifying your contract on sepolia
-npx hardhat verify --network sepolia addTheSmartContractAddress
+npx hardhat verify --network sepolia addTheSmartContractAddress "argument 1" 
