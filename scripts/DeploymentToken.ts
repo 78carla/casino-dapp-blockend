@@ -5,8 +5,6 @@ import * as dotenv from "dotenv";
 
 dotenv.config();
 
-const TOKEN_NAME = "Team7Early";
-const TOKEN_SYMBOL = "T7E";
 const MINT_AMOUT = 1000;
 
 async function main() {
@@ -33,8 +31,8 @@ async function main() {
   console.log("Deploying Token contract:");
   const myERC20ContractFactory = new CasinoToken__factory(signer);
   const myERC20Contract = await myERC20ContractFactory.deploy(
-    TOKEN_NAME,
-    TOKEN_SYMBOL,
+    "Team7Early",
+    "T7E"
   );
 
   await myERC20Contract.deployed();
@@ -59,12 +57,6 @@ async function main() {
   await mintTx.wait();
   const totalSupply = await myERC20Contract.totalSupply();
   console.log("The new Total Supply is:", totalSupply.toString());
-
-  console.log(
-    `Verify the Token contract with this command: \n
-    npx hardhat verify --network sepolia ${myERC20Contract.address} "${TOKEN_NAME}" "${TOKEN_SYMBOL}"
-    `    
-  );
 }
 
 main().catch((error) => {
