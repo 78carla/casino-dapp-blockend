@@ -51,28 +51,18 @@ async function main() {
   console.log("Deploying Casino contract:");
   //const contractFactory = new Lottery__factory(accounts[0]);
   const contractFactory = new Casino__factory(signer);
-  console.log("Deploying contract ...");
+  const contract = contractFactory.attach("0x35a04b231D685DbFA507179E7066561c2Ee86690");
 
-  contract = await contractFactory.deploy(
-    "Team7Early",
-    "T7E",
-    TOKEN_RATIO,
-    ethers.utils.parseEther(PLAY_PRICE.toFixed(18)),
-    ethers.utils.parseEther(PRIZE_POOL.toFixed(18))
-  );
 
   const tokenAddress = await contract.paymentToken();
   const tokenFactory = new CasinoToken__factory(signer);
   token = tokenFactory.attach(tokenAddress);
 
-  const deployTransactionReceipt = await contract.deployTransaction.wait();
   console.log(
     "The Casino contract address is:",
     contract.address,
     "and was deployed by",
     signer.address,
-    "at block number",
-    deployTransactionReceipt.blockNumber,
     "\n"
   );
   console.log(
@@ -135,7 +125,7 @@ async function main() {
 
   const flipTx = await contract
     .connect(signer)
-    .flipCoin({ value: ethers.utils.parseEther(PLAY_PRICE.toString()) });
+    .flipCoin();
   const flipTxReceipt = await flipTx.wait();
   console.log(
     "The Flip was confermed at block number",
