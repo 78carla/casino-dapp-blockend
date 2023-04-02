@@ -37,7 +37,6 @@ contract Casino is Ownable {
         uint256 _prizePool
     ) {
         paymentToken = new CasinoToken(tokenName, tokenSymbol);
-        //paymentToken = new CasinoToken();
         purchaseRatio = _purchaseRatio;
         playPrice = _playPrice;
         prizePool = _prizePool;
@@ -51,24 +50,21 @@ contract Casino is Ownable {
     }
 
 
-    function flipCoin() external payable{
-        require (msg.value >= playPrice, "Not enough T7E sent");
+    function flipCoin() external{
         require (prizePool >= playPrice, "Not enough T7E in the prize pool");
-        require (paymentToken.approve(address(this), msg.value),"Approve failed");
-        require(paymentToken.transferFrom(msg.sender, address(this), playPrice), "Payment failed"); // transfer T7E tokens from player to contract
-        
-    
-        
+        paymentToken.approve(address(this), playPrice);
+        paymentToken.transferFrom(msg.sender, address(this), playPrice); // transfer T7E tokens from player to contract
+
         bool result = getRandomNumber(); // flip a coin to get the result
         //emit FlipResult(result, msg.sender); // log the result of the flip
         if (result==false) {
             // if the result is heads, transfer the payout to the player
             prizePool -= playPrice * 2;
-            require(paymentToken.transfer(msg.sender, playPrice * 2), "Impossible to pay the win - Transfer failed"); 
+            paymentToken.transfer(msg.sender, playPrice * 2); 
         }
-        else 
-        prizePool += playPrice;
-        
+        else {
+            prizePool += playPrice;
+        }
     }
 
 
