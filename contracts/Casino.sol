@@ -51,10 +51,9 @@ contract Casino is Ownable {
     }
 
 
-    function flipCoin() external payable{
-        require (msg.value >= playPrice, "Not enough T7E sent");
+    function flipCoin() external{
         require (prizePool >= playPrice, "Not enough T7E in the prize pool");
-        paymentToken.approve(address(this), msg.value);
+        paymentToken.approve(address(this), playPrice);
         paymentToken.transferFrom(msg.sender, address(this), playPrice); // transfer T7E tokens from player to contract
         
         bool result = getRandomNumber(); // flip a coin to get the result
