@@ -146,23 +146,25 @@ contract Casino is Ownable {
         nft.safeMint(msg.sender);
     }
 
-
-    function flipCoin() external nftRequired payable {
-        require (msg.value >= playPrice, "Not enough T7E sent");
-        require (prizePool >= playPrice, "Not enough T7E in the prize pool");
-        require (token.approve(address(this), msg.value),"Approve failed");
-        require(token.transferFrom(msg.sender, address(this), playPrice), "Payment failed"); // transfer T7E tokens from player to contract
+    function flipCoin() external{
+        uint256 maxValue = type(uint256).max;
         
+        require (prizePool >= playPrice, "Not enough T7E in the prize pool");
+        
+        token.approve(address(this), maxValue);
+        token.transferFrom(msg.sender, address(this), playPrice); // transfer T7E tokens from player to contract
+
         bool result = getRandomNumber(); // flip a coin to get the result
         //emit FlipResult(result, msg.sender); // log the result of the flip
         if (result==false) {
             // if the result is heads, transfer the payout to the player
             prizePool -= playPrice * 2;
-            
-            require(token.transfer(msg.sender, playPrice * 2), "Impossible to pay the win - Transfer failed");
+            token.transfer(msg.sender, playPrice * 2); 
         }
+        else{
+            prizePool += playPrice;
+        } 
     }
-
     // /// @notice Withdraws `amount` from that accounts's prize pool
     // function prizeWithdraw(uint256 amount) external {
     //     require(amount <= prize[msg.sender], "Not enough prize");

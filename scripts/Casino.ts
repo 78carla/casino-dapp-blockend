@@ -51,8 +51,10 @@ async function main() {
   console.log("Deploying Casino contract:");
   //const contractFactory = new Lottery__factory(accounts[0]);
   const contractFactory = new Casino__factory(signer);
-  const contract = contractFactory.attach("0x35a04b231D685DbFA507179E7066561c2Ee86690");
-
+  //const contract = contractFactory.attach("0x35a04b231D685DbFA507179E7066561c2Ee86690");
+  const contract = contractFactory.attach(
+    "0x9204F463Bae3f0e6BBE6E22a4412D38286301F74"
+  );
 
   const tokenAddress = await contract.paymentToken();
   const tokenFactory = new CasinoToken__factory(signer);
@@ -108,12 +110,22 @@ async function main() {
 
   const allowTx = await token
     .connect(signer)
-    .approve(
-      contract.address,
-      ethers.utils.parseEther(AUTORIZED_AMOUNT.toString())
-    );
+    .approve(contract.address, ethers.constants.MaxUint256);
+  // const allowTx = await token
+  //   .connect(signer)
+  //   .approve(contract.address, ethers.constants.MaxUint256);
   const allowTxReceipt = await allowTx.wait();
   console.log("Allowance confirmed at block", allowTxReceipt.blockNumber, "\n");
+
+  const transferTx = await token
+    .connect(signer)
+    .transfer(contract.address, ethers.utils.parseEther(PLAY_PRICE.toString()));
+  const transferTxReceipt = await transferTx.wait();
+  console.log(
+    "Transfer confirmed at block",
+    transferTxReceipt.blockNumber,
+    "\n"
+  );
 
   //Return the pool size before the play
   const prizePoolBefore = await contract.prizePool();
@@ -123,15 +135,21 @@ async function main() {
     "T7E"
   );
 
-  const flipTx = await contract
-    .connect(signer)
-    .flipCoin();
+  const flipTx = await contract.connect(signer).flipCoin();
   const flipTxReceipt = await flipTx.wait();
   console.log(
     "The Flip was confermed at block number",
     flipTxReceipt.blockNumber,
     "\n"
   );
+
+  // const flipTx = await contract.connect(signer).flipCoin();
+  // const flipTxReceipt = await flipTx.wait();
+  // console.log(
+  //   "The Flip was confermed at block number",
+  //   flipTxReceipt.blockNumber,
+  //   "\n"
+  // );
 
   //Return the pool size after the play
   const prizePoolAfter = await contract.prizePool();
