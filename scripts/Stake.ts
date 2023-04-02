@@ -27,7 +27,7 @@ async function main() {
 
 
   const stakingFactory = new Staking__factory(signer);
-  const contract = stakingFactory.attach("0x03b2EA9031AfAC3E879887D632542165F22954BE");
+  const contract = stakingFactory.attach("0x3CedF142695d6C80Fb0B6F494784dD77fc2b5865");
   
   const tokenAddress = await contract.stakingToken();
   const tokenFactory = new CasinoToken__factory(signer);
@@ -41,7 +41,16 @@ async function main() {
 
     //stake some tokens
 
-    contract.connect(wallet).stake(12);
+    const approvalTx = await token.approve(contract.address, 800000);
+    console.log("approval wait");
+    const approvalReceipt = await approvalTx.wait();
+    console.log("approval done");
+
+    const stakingTx = await contract.stake(800000);
+    console.log("stake wait");
+    await stakingTx.wait();
+    console.log("stake done");
+    console.log(`The ${signer.address} account has ${tokenBalance} T7E\n`);
 
 }
 

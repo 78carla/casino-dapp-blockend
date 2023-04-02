@@ -39,22 +39,6 @@ async function main() {
   console.log(
     `The staking contract is deployed to: ${contract.address}, at block, ${deployTxReceipt.blockNumber}`
   );
-
-  
-  const tokenAddress = await contract.stakingToken();
-  const tokenFactory = new CasinoToken__factory(signer);
-  const token = tokenFactory.attach(tokenAddress);
-
-    //Check the T7E balance of the signer
-  //async function displayTokenBalance(index: string) {
-    const tokenBalanceBN = await token.balanceOf(signer.address);
-    const tokenBalance = ethers.utils.formatEther(tokenBalanceBN);
-    console.log(`The ${signer.address} account has ${tokenBalance} T7E\n`);
-
-    //stake some tokens
-
-    contract.connect(wallet).stake(12);
-
 }
 
 main().catch((error) => {
