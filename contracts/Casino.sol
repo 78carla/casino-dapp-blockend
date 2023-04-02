@@ -37,6 +37,7 @@ contract Casino is Ownable {
         uint256 _prizePool
     ) {
         paymentToken = new CasinoToken(tokenName, tokenSymbol);
+        //paymentToken = new CasinoToken();
         purchaseRatio = _purchaseRatio;
         playPrice = _playPrice;
         prizePool = _prizePool;
@@ -52,9 +53,8 @@ contract Casino is Ownable {
 
     function flipCoin() external{
         require (prizePool >= playPrice, "Not enough T7E in the prize pool");
-        paymentToken.approve(address(this), playPrice);
         paymentToken.transferFrom(msg.sender, address(this), playPrice); // transfer T7E tokens from player to contract
-
+        
         bool result = getRandomNumber(); // flip a coin to get the result
         //emit FlipResult(result, msg.sender); // log the result of the flip
         if (result==false) {
@@ -65,6 +65,7 @@ contract Casino is Ownable {
         else {
             prizePool += playPrice;
         }
+        
     }
 
 
