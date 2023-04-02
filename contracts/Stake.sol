@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8;
 
-contract Staking {
+contract Stake {
     IERC20 public immutable stakingToken;
 
     /* ========== STATE VARIABLES ========== */
@@ -11,14 +11,14 @@ contract Staking {
     uint256 public casinoProfit;
 
     // Sum of (reward rate * dt * 1e18 / total supply)
-    uint public rewardPerTokenStored;
-    // User address => rewardPerTokenStored
+    uint public rewardPerTokenStaked;
+    // User address => rewardPerTokenStaked
     mapping(address => uint) public userRewardPerTokenPaid;
     // User address => rewards to be claimed
     mapping(address => uint) public rewards;
 
     // Total staked
-    uint public totalSupply;
+    uint public totalStaked;
     // User address => staked amount
     mapping(address => uint) public balanceOf;
 
@@ -37,10 +37,10 @@ contract Staking {
     }
 
     modifier updateReward(address _account) {
-        rewardPerTokenStored = rewardPerToken();
+        rewardPerTokenStaked = rewardPerToken();
         if (_account != address(0)) {
             rewards[_account] = earned(_account);
-            userRewardPerTokenPaid[_account] = rewardPerTokenStored;
+            userRewardPerTokenPaid[_account] = rewardPerTokenStaked;
         }
         _;
     }
@@ -48,10 +48,15 @@ contract Staking {
     /* ========== VIEWS ========== */
 
     function rewardPerToken() public view returns (uint256) {
-        if (totalSupply == 0) {
+        if (this.totalSupply() == 0) {
             return 0;
         }
-        return casinoProfit / totalSupply;
+        return casinoProfit / this.totalSupply();
+    }
+
+    function totalSupply() public view returns (uint256) {
+
+        return (casinoProfit + totalStaked);
     }
 
     function earned(address _account) public view returns (uint) {
@@ -67,13 +72,13 @@ contract Staking {
         require(_amount > 0, "amount = 0");
         stakingToken.transferFrom(msg.sender, address(this), _amount);
         balanceOf[msg.sender] += _amount;
-        totalSupply += _amount;
+        totalStaked += _amount;
     }
 
     function withdraw(uint _amount) external updateReward(msg.sender) {
         require(_amount > 0, "amount = 0");
         balanceOf[msg.sender] -= _amount;
-        totalSupply -= _amount;
+        totalStaked -= _amount;
         stakingToken.transfer(msg.sender, _amount);
     }
 
