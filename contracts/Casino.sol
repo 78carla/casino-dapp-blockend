@@ -19,8 +19,7 @@ contract Casino is Ownable {
     /// @notice Amount of tokens in the prize pool
     uint256 public prizePool;
 
-    //event FlipResult(bool result, address player);
-
+    string public coin;
 
     /// @notice Constructor function
     // /// @param tokenName Name of the token used for payment
@@ -43,47 +42,55 @@ contract Casino is Ownable {
        
     }
 
+    //Mint some T7E tokens for the contract - it is the initial prizePool
+    function depositToken () external{
+        paymentToken.mint(address(this), prizePool);
+    }
 
     /// @notice Gives tokens based on the amount of ETH sent
     function purchaseTokens() external payable {
         paymentToken.mint(msg.sender, msg.value * purchaseRatio);
     }
 
-    
-    // function approve () external {
+    //Pay function used for testing purposes
+    // function payGame() external returns (bool){
     //     uint256 maxValue = type(uint256).max;
     //     paymentToken.approve(address(this), maxValue);
-    // }
-
-    // function transferFrom () external {
     //     paymentToken.transferFrom(msg.sender, address(this), playPrice);
+    //     prizePool += playPrice;
+    //     return payStatus = true;
     // }
 
-    function flipCoin() external{
+    //Play the game - run the flip coin
+    function flipCoin() external returns (string memory) {
         uint256 maxValue = type(uint256).max;
-        
+
         require (prizePool >= playPrice, "Not enough T7E in the prize pool");
+        require (paymentToken.balanceOf(msg.sender) >= playPrice, "Not enough T7E in your wallet");
         
         paymentToken.approve(address(this), maxValue);
         paymentToken.transferFrom(msg.sender, address(this), playPrice); // transfer T7E tokens from player to contract
-
+        prizePool += playPrice;
+        
         bool result = getRandomNumber(); // flip a coin to get the result
-        //emit FlipResult(result, msg.sender); // log the result of the flip
-        if (result==false) {
+
+        if (result==true) {
             // if the result is heads, transfer the payout to the player
             prizePool -= playPrice * 2;
             paymentToken.transfer(msg.sender, playPrice * 2); 
+            return coin = "Heads"; 
+            
         }
         else{
-            prizePool += playPrice;
+            return coin = "Tails";   
         } 
     }
-
 
     /// @notice Returns a random number calculated from the previous block randao
     /// @dev This only works after The Merge
     function getRandomNumber() public view returns (bool) {
         uint256 randomNumber;
+        
         randomNumber = block.prevrandao;
         return randomNumber % 2 == 0 ? false: true; // return true for heads (1) and false for tails (0)
     }

@@ -78,15 +78,25 @@ async function main() {
     signer.address,
     "\n"
   );
+
+  //Deposit some T7E tokens to the contract
+  const depositTx = await contract.depositToken();
+  const depositTxReceipt = await depositTx.wait();
+  console.log("Deposit confirmed at block", depositTxReceipt.blockNumber, "\n");
+
   console.log(
     `Verify the Token contract with this command: \n
     npx hardhat verify --network sepolia ${token.address} "${TOKEN_NAME}" "${TOKEN_SYMBOL}"
-    `    
+    `
   );
   console.log(
     `Verify the Casino contract with this command: \n
-    npx hardhat verify --network sepolia ${contract.address} "${TOKEN_NAME}" "${TOKEN_SYMBOL}" "${TOKEN_RATIO}" "${ethers.utils.parseEther(PLAY_PRICE.toFixed(18))}" "${ethers.utils.parseEther(PRIZE_POOL.toFixed(18))}"
-    `    
+    npx hardhat verify --network sepolia ${
+      contract.address
+    } "${TOKEN_NAME}" "${TOKEN_SYMBOL}" "${TOKEN_RATIO}" "${ethers.utils.parseEther(
+      PLAY_PRICE.toFixed(18)
+    )}" "${ethers.utils.parseEther(PRIZE_POOL.toFixed(18))}"
+    `
   );
 }
 

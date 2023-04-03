@@ -24,6 +24,7 @@ const PRIZE_POOL = 100;
 const TOKEN_RATIO = 10000;
 const BUY_AMOUNT = 1;
 const AUTORIZED_AMOUNT = 2;
+const WITHDRAWAL_AMOUNT = 10;
 //const PAY_AMOUNT = "1";
 // const GUESS = true; //true = heads, false = tails
 
@@ -51,9 +52,8 @@ async function main() {
   console.log("Deploying Casino contract:");
   //const contractFactory = new Lottery__factory(accounts[0]);
   const contractFactory = new Casino__factory(signer);
-  //const contract = contractFactory.attach("0x35a04b231D685DbFA507179E7066561c2Ee86690");
   const contract = contractFactory.attach(
-    "0x9204F463Bae3f0e6BBE6E22a4412D38286301F74"
+    "0xb9887c6F00d009A784516191F7F017973B9E4808"
   );
 
   const tokenAddress = await contract.paymentToken();
@@ -76,80 +76,63 @@ async function main() {
   );
 
   // Get the ETH balance of the signer
-  //async function displayBalance(address: string) {
   const balanceBN = await ethers.provider.getBalance(signer.address);
   const balance = ethers.utils.formatEther(balanceBN);
   console.log(`The ${signer.address} account has ${balance} ETH\n`);
-  //}
 
   //Buy some T7E tokens
-  // async function buyTokens(index: string, amount: string) {
   const txBuy = await contract.connect(signer).purchaseTokens({
     value: ethers.utils.parseEther(BUY_AMOUNT.toString()).div(TOKEN_RATIO),
   });
   const receiptBuy = await txBuy.wait();
   console.log(
-    `Tokens bought at ${receiptBuy.transactionHash} transaction hash\n`
+    `The account ${signer.address} account has bought some tokens. Tokens bought at ${receiptBuy.transactionHash} transaction hash\n`
   );
 
-  //Check the T7E balance of the signer
-  //async function displayTokenBalance(index: string) {
+  //Check the T7E balance of the signer after the purchase
   const tokenBalanceBN = await token.balanceOf(signer.address);
   const tokenBalance = ethers.utils.formatEther(tokenBalanceBN);
-  console.log(`The ${signer.address} account has ${tokenBalance} T7E\n`);
+  console.log(`The ${signer.address} account has now ${tokenBalance} T7E\n`);
 
+  //Check the ETH balance of the signer after the purchase
   const balanceBNBuy = await ethers.provider.getBalance(signer.address);
   const balanceBuy = ethers.utils.formatEther(balanceBNBuy);
-  console.log(`The ${signer.address} account has ${balanceBuy} ETH\n`);
+  console.log(`The ${signer.address} account has now ${balanceBuy} ETH\n`);
 
-  const random = await contract.getRandomNumber();
-  console.log("The Random number is: ", random);
-
-  //Flip the coin
-  // async function bet(index: string, amount: string) {
-
+  //The signer allows the Casino contract to spend the T7E tokens
   const allowTx = await token
     .connect(signer)
     .approve(contract.address, ethers.constants.MaxUint256);
-  // const allowTx = await token
-  //   .connect(signer)
-  //   .approve(contract.address, ethers.constants.MaxUint256);
   const allowTxReceipt = await allowTx.wait();
   console.log("Allowance confirmed at block", allowTxReceipt.blockNumber, "\n");
 
-  const transferTx = await token
-    .connect(signer)
-    .transfer(contract.address, ethers.utils.parseEther(PLAY_PRICE.toString()));
-  const transferTxReceipt = await transferTx.wait();
-  console.log(
-    "Transfer confirmed at block",
-    transferTxReceipt.blockNumber,
-    "\n"
-  );
+  //Payment function used for testing purposes
+  // const payGameTx = await contract.connect(signer).payGame();
+  // const payGameTxReceipt = await payGameTx.wait();
+  // console.log("PayGame confirmed at block", payGameTxReceipt.blockNumber, "\n");
 
   //Return the pool size before the play
   const prizePoolBefore = await contract.prizePool();
   console.log(
-    "The Prize pool contains: ",
+    "The initial Prize pool contains: ",
     ethers.utils.formatEther(prizePoolBefore),
     "T7E"
   );
 
+  //Returns the random number
+  const resultTx = await contract.getRandomNumber();
+  console.log("The Random number is: ", resultTx);
+
+  //Play the game and flip the coin
   const flipTx = await contract.connect(signer).flipCoin();
   const flipTxReceipt = await flipTx.wait();
+  const flipCoinResult = await contract.coin();
   console.log(
     "The Flip was confermed at block number",
     flipTxReceipt.blockNumber,
     "\n"
   );
-
-  // const flipTx = await contract.connect(signer).flipCoin();
-  // const flipTxReceipt = await flipTx.wait();
-  // console.log(
-  //   "The Flip was confermed at block number",
-  //   flipTxReceipt.blockNumber,
-  //   "\n"
-  // );
+  console.log("The Flip result is: ", flipCoinResult, "\n");
 
   //Return the pool size after the play
   const prizePoolAfter = await contract.prizePool();
@@ -159,19 +142,32 @@ async function main() {
     "T7E"
   );
 
-  //Return the T7E balance of the signer
+  //Return the T7E balance of the signer after the play
   const tokenBalanceBNAfter = await token.balanceOf(signer.address);
   const tokenBalanceAfter = ethers.utils.formatEther(tokenBalanceBNAfter);
   console.log(
     `After the Flip the ${signer.address} account now has ${tokenBalanceAfter} T7E\n`
   );
 
-  //Return the ETH balance of the signer
+  //Return the ETH balance of the signer after the play
   const balanceBNAfter = await ethers.provider.getBalance(signer.address);
   const balanceAfter = ethers.utils.formatEther(balanceBNAfter);
   console.log(
     `After the Flip the ${signer.address} account has ${balanceAfter} ETH\n`
   );
+
+  //The owner can withdraw the prize pool
+  // const poolTx = await contract.ownerWithdraw(ethers.utils.parseEther("10"));
+  // const poolReceipt = await poolTx.wait();
+  // console.log(`Withdraw confirmed (${poolReceipt.transactionHash})\n`);
+
+  // //Return the pool size after the withdraw
+  // const prizePoolAfterWithdraw = await contract.prizePool();
+  // console.log(
+  //   "After the Flip the Prize pool contains: ",
+  //   ethers.utils.formatEther(prizePoolAfterWithdraw),
+  //   "T7E"
+  // );
 
   // async function displayPrize(index: string): Promise<string> {
   //   const prizeBN = await contract.prize(accounts[Number(index)].address);
@@ -196,12 +192,6 @@ async function main() {
   //   const balanceBN = await contract.ownerPool();
   //   const balance = ethers.utils.formatEther(balanceBN);
   //   console.log(`The owner pool has (${balance}) Tokens \n`);
-  // }
-
-  // async function withdrawTokens(amount: string) {
-  //   const tx = await contract.ownerWithdraw(ethers.utils.parseEther(amount));
-  //   const receipt = await tx.wait();
-  //   console.log(`Withdraw confirmed (${receipt.transactionHash})\n`);
   // }
 
   // async function burnTokens(index: string, amount: string) {
