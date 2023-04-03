@@ -58,14 +58,10 @@ async function main() {
     ethers.utils.parseEther(PRIZE_POOL.toFixed(18))
   );
 
-  const tokenContract = await contract.paymentToken();
+  const tokenContract = await contract.token();
   const tokenFactory = new CasinoToken__factory(signer);
   token = tokenFactory.attach(tokenContract);
 
-  
-  const stakingContract = await contract.stakingContract();
-  const stakingFactory = new Staking__factory(signer);
-  staking = stakingFactory.attach(stakingContract);
 
   const deployTransactionReceipt = await contract.deployTransaction.wait();
   console.log(
@@ -80,13 +76,6 @@ async function main() {
   console.log(
     "The Token contract address is:",
     token.address,
-    "and was deployed by",
-    signer.address,
-    "\n"
-  );
-  console.log(
-    "The Staking contract address is:",
-    staking.address,
     "and was deployed by",
     signer.address,
     "\n"

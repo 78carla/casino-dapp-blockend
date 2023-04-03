@@ -25,11 +25,10 @@ async function main() {
   console.log("Connected to the wallet address", wallet.address);
   const signer = wallet.connect(provider);
 
-
-  const stakingFactory = new Stake__factory(signer);
-  const contract = stakingFactory.attach("0x3CedF142695d6C80Fb0B6F494784dD77fc2b5865");
+  const casinoFactory = new Casino__factory(signer);
+  const contract = casinoFactory.attach("0x2b4a05ce864d4Db391cd00bdFfD02c2138BD3D3b");
   
-  const tokenAddress = await contract.stakingToken();
+  const tokenAddress = await contract.token();
   const tokenFactory = new CasinoToken__factory(signer);
   const token = tokenFactory.attach(tokenAddress);
 
@@ -39,9 +38,18 @@ async function main() {
     const tokenBalance = ethers.utils.formatEther(tokenBalanceBN);
     console.log(`The ${signer.address} account has ${tokenBalance} T7E\n`);
 
-    //stake some tokens
+    const allowTx = await token
+    .connect(signer)
+    .approve(
+      contract.address,
+      ethers.utils.parseEther("10")
+    );
+  const allowTxReceipt = await allowTx.wait();
+  console.log("Allowance confirmed at block", allowTxReceipt.blockNumber, "\n");
 
-    const stakingTx = await contract.stake(40000000);
+
+    //stake some tokens
+    const stakingTx = await contract.stake(ethers.utils.parseEther("10"));
     console.log("stake wait");
     await stakingTx.wait();
     console.log("stake done");
