@@ -126,11 +126,13 @@ async function main() {
   //Play the game and flip the coin
   const flipTx = await contract.connect(signer).flipCoin();
   const flipTxReceipt = await flipTx.wait();
+  const flipCoinResult = await contract.coin();
   console.log(
     "The Flip was confermed at block number",
     flipTxReceipt.blockNumber,
     "\n"
   );
+  console.log("The Flip result is: ", flipCoinResult, "\n");
 
   //Return the pool size after the play
   const prizePoolAfter = await contract.prizePool();
