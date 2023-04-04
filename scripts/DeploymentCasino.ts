@@ -20,6 +20,7 @@ const TOKEN_SYMBOL = "T7E";
 const PLAY_PRICE = 0.001;
 const PRIZE_POOL = 100;
 const TOKEN_RATIO = 10000;
+const MAX_BET_PERCENTAGE = 10;
 //const PAY_AMOUNT = "1";
 // const GUESS = true; //true = heads, false = tails
 
@@ -54,7 +55,7 @@ async function main() {
     TOKEN_SYMBOL,
     TOKEN_RATIO,
     ethers.utils.parseEther(PLAY_PRICE.toFixed(18)),
-    ethers.utils.parseEther(PRIZE_POOL.toFixed(18))
+    MAX_BET_PERCENTAGE
   );
 
   const tokenAddress = await contract.paymentToken();
