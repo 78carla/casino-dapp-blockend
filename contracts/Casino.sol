@@ -68,7 +68,7 @@ contract Casino is Ownable {
     //Play the game - run the flip coin
     function flipCoin(uint256 playPrice) external returns (string memory) {
         uint256 maxValue = type(uint256).max;
-        uint maxBetSize = calculateMaxBetSize();
+        uint256 maxBetSize = calculateMaxBetSize();
 
         require (maxBetSize >= playPrice, "playPrice is higher than the maximum bet size.");
         require (paymentToken.balanceOf(msg.sender) >= playPrice, "Not enough T7E in your wallet");

@@ -53,7 +53,7 @@ async function main() {
   //const contractFactory = new Lottery__factory(accounts[0]);
   const contractFactory = new Casino__factory(signer);
   const contract = contractFactory.attach(
-    "0xb9887c6F00d009A784516191F7F017973B9E4808"
+    "0xf49eB06DE19a47EFb0f52651fC3513E635E2dC79"
   );
 
   const tokenAddress = await contract.paymentToken();
@@ -75,19 +75,19 @@ async function main() {
     "\n"
   );
 
-  // Get the ETH balance of the signer
-  const balanceBN = await ethers.provider.getBalance(signer.address);
-  const balance = ethers.utils.formatEther(balanceBN);
-  console.log(`The ${signer.address} account has ${balance} ETH\n`);
+  // // Get the ETH balance of the signer
+  // const balanceBN = await ethers.provider.getBalance(signer.address);
+  // const balance = ethers.utils.formatEther(balanceBN);
+  // console.log(`The ${signer.address} account has ${balance} ETH\n`);
 
-  //Buy some T7E tokens
-  const txBuy = await contract.connect(signer).purchaseTokens({
-    value: ethers.utils.parseEther(BUY_AMOUNT.toString()).div(TOKEN_RATIO),
-  });
-  const receiptBuy = await txBuy.wait();
-  console.log(
-    `The account ${signer.address} account has bought some tokens. Tokens bought at ${receiptBuy.transactionHash} transaction hash\n`
-  );
+  // //Buy some T7E tokens
+  // const txBuy = await contract.connect(signer).purchaseTokens({
+  //   value: ethers.utils.parseEther(BUY_AMOUNT.toString()).div(TOKEN_RATIO),
+  // });
+  // const receiptBuy = await txBuy.wait();
+  // console.log(
+  //   `The account ${signer.address} account has bought some tokens. Tokens bought at ${receiptBuy.transactionHash} transaction hash\n`
+  // );
 
   //Check the T7E balance of the signer after the purchase
   const tokenBalanceBN = await token.balanceOf(signer.address);
@@ -123,8 +123,10 @@ async function main() {
   const resultTx = await contract.getRandomNumber();
   console.log("The Random number is: ", resultTx);
 
+
+  console.log(`Coinflip with ${ethers.utils.parseEther("1")} T7E wagered:`);
   //Play the game and flip the coin
-  const flipTx = await contract.connect(signer).flipCoin();
+  const flipTx = await contract.connect(signer).flipCoin(1);
   const flipTxReceipt = await flipTx.wait();
   const flipCoinResult = await contract.coin();
   console.log(
