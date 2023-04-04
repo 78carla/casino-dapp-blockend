@@ -131,10 +131,8 @@ contract Casino is Ownable {
         if (result==false) {
             // if the result is heads, transfer the payout to the player
             prizePool -= playPrice * 2;
-            require(token.transfer(msg.sender, playPrice * 2), "Impossible to pay the win - Transfer failed"); 
-        }
-        else 
-        prizePool += playPrice;
+            
+            require(token.transfer(msg.sender, playPrice * 2), "Impossible to pay the win - Transfer failed");
         
     }
 
