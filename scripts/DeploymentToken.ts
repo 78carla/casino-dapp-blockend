@@ -5,7 +5,7 @@ import * as dotenv from "dotenv";
 
 dotenv.config();
 
-const MINT_AMOUT = 1000;
+const MINT_AMOUT = 0;
 
 async function main() {
   // Connect to the network
@@ -50,13 +50,13 @@ async function main() {
 
   console.log("The contract name is:", constractName);
   console.log("The contract symbol is:", constractSymbol);
-  console.log("The initial Total Supply:", totalSypply.toString());
+  //console.log("The initial Total Supply:", totalSypply.toString());
 
   //Mint 1000 tokens to the deployer
-  const mintTx = await myERC20Contract.mint(signer.address, MINT_AMOUT);
-  await mintTx.wait();
-  const totalSupply = await myERC20Contract.totalSupply();
-  console.log("The new Total Supply is:", totalSupply.toString());
+  // const mintTx = await myERC20Contract.mint(signer.address, MINT_AMOUT);
+  // await mintTx.wait();
+  // const totalSupply = await myERC20Contract.totalSupply();
+  // console.log("The new Total Supply is:", totalSupply.toString());
 }
 
 main().catch((error) => {
