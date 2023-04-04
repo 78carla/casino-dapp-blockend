@@ -112,6 +112,14 @@ contract Casino is Ownable {
         totalStaked += _amount;
     }
 
+    function unstake(uint _amount) external updateReward(msg.sender) {
+        require(_amount > 0, "amount = 0");
+        balanceOf[msg.sender] -= _amount;
+        totalStaked -= _amount;
+        token.transfer(msg.sender, _amount);
+    }
+
+
     /// @notice Gives tokens based on the amount of ETH sent
     function purchaseTokens() external payable {
         token.mint(msg.sender, msg.value * purchaseRatio);
