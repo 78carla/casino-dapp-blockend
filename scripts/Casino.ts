@@ -53,10 +53,10 @@ async function main() {
   //const contractFactory = new Lottery__factory(accounts[0]);
   const contractFactory = new Casino__factory(signer);
   const contract = contractFactory.attach(
-    "0xb9887c6F00d009A784516191F7F017973B9E4808"
+    "0xbdb9d04b614Fc3D780B2DFe6F570F6ccA3393E87"
   );
 
-  const tokenAddress = await contract.paymentToken();
+  const tokenAddress = await contract.token();
   const tokenFactory = new CasinoToken__factory(signer);
   token = tokenFactory.attach(tokenAddress);
 
@@ -126,13 +126,11 @@ async function main() {
   //Play the game and flip the coin
   const flipTx = await contract.connect(signer).flipCoin();
   const flipTxReceipt = await flipTx.wait();
-  const flipCoinResult = await contract.coin();
   console.log(
     "The Flip was confermed at block number",
     flipTxReceipt.blockNumber,
     "\n"
   );
-  console.log("The Flip result is: ", flipCoinResult, "\n");
 
   //Return the pool size after the play
   const prizePoolAfter = await contract.prizePool();

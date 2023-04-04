@@ -2,8 +2,10 @@ import { ethers } from "hardhat";
 import {
   Casino,
   CasinoToken,
-  CasinoToken__factory,
+  CasinoPassport,
   Casino__factory,
+  CasinoToken__factory,
+  CasinoPassport__factory
 } from "../typechain-types";
 
 import * as dotenv from "dotenv";
@@ -11,18 +13,15 @@ dotenv.config();
 
 let contract: Casino;
 let token: CasinoToken;
+let nft: CasinoPassport;
 //let accounts: SignerWithAddress[];
 
 let signer;
 
-const TOKEN_NAME = "Team7Early";
-const TOKEN_SYMBOL = "T7E";
-const NFT_NAME = "Team7Passport";
-const NFT_SYMBOL = "T7P";
-const NFT_PRICE = 20;
 const PLAY_PRICE = 0.001;
 const PRIZE_POOL = 100;
 const TOKEN_RATIO = 10000;
+const NFT_PRICE = 20;
 //const PAY_AMOUNT = "1";
 // const GUESS = true; //true = heads, false = tails
 
@@ -53,19 +52,19 @@ async function main() {
   console.log("Deploying contract ...");
 
   contract = await contractFactory.deploy(
-    TOKEN_NAME,
-    TOKEN_SYMBOL,
-    NFT_NAME,
-    NFT_SYMBOL,
     TOKEN_RATIO,
     ethers.utils.parseEther(PLAY_PRICE.toFixed(18)),
     ethers.utils.parseEther(PRIZE_POOL.toFixed(18)),
     NFT_PRICE
   );
 
-  const tokenContract = await contract.token();
+  const tokenAddress = await contract.token();
   const tokenFactory = new CasinoToken__factory(signer);
-  token = tokenFactory.attach(tokenContract);
+  token = tokenFactory.attach(tokenAddress);
+
+  const nftAddress = await contract.token();
+  const nftFactory = new CasinoPassport__factory(signer);
+  nft = nftFactory.attach(nftAddress);
 
 
   const deployTransactionReceipt = await contract.deployTransaction.wait();
@@ -85,6 +84,13 @@ async function main() {
     signer.address,
     "\n"
   );
+  console.log(
+    "The NFT contract address is:",
+    nft.address,
+    "and was deployed by",
+    signer.address,
+    "\n"
+  );
 
   //Deposit some T7E tokens to the contract
   const depositTx = await contract.depositToken();
@@ -93,16 +99,22 @@ async function main() {
 
   console.log(
     `Verify the Token contract with this command: \n
-    npx hardhat verify --network sepolia ${token.address} "${TOKEN_NAME}" "${TOKEN_SYMBOL}"
+    npx hardhat verify --network sepolia ${token.address} 
+    `
+  );
+
+  console.log(
+    `Verify the NFT contract with this command: \n
+    npx hardhat verify --network sepolia ${nft.address} 
     `
   );
   console.log(
     `Verify the Casino contract with this command: \n
     npx hardhat verify --network sepolia ${
       contract.address
-    } "${TOKEN_NAME}" "${TOKEN_SYMBOL}" "${TOKEN_RATIO}" "${ethers.utils.parseEther(
+    } "${TOKEN_RATIO}" "${ethers.utils.parseEther(
       PLAY_PRICE.toFixed(18)
-    )}" "${ethers.utils.parseEther(PRIZE_POOL.toFixed(18))}"
+    )}" "${ethers.utils.parseEther(PRIZE_POOL.toFixed(18))}" "${NFT_PRICE}"
     `
   );
 }

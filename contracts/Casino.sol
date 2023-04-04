@@ -53,18 +53,14 @@ contract Casino is Ownable {
     /// @param _playPrice Amount of tokens required for placing a play that goes for the prize pool
     
     constructor(
-        string memory tokenName,
-        string memory tokenSymbol,
-        string memory nftName,
-        string memory nftSymbol,
         uint256 _purchaseRatio,
         uint256 _playPrice,
         uint256 _prizePool,
         uint256 _nftPrice
     ) {
 
-        nft = new CasinoPassport(nftName, nftSymbol);
-        token = new CasinoToken(tokenName, tokenSymbol);
+        nft = new CasinoPassport();
+        token = new CasinoToken();
         purchaseRatio = _purchaseRatio;
         playPrice = _playPrice;
         prizePool = _prizePool;

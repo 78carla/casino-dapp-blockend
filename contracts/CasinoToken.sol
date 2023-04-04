@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 contract CasinoToken is ERC20, AccessControl, ERC20Burnable{
 
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    constructor(string memory name, string memory symbol) ERC20(name, symbol) {
+    constructor() ERC20("Team7Early", "T7E") {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(MINTER_ROLE, msg.sender);
     }
