@@ -19,13 +19,11 @@ let nft: CasinoPassport;
 let signer;
 
 const BUY_AMOUNT = 100;
-const STAKE_AMOUNT = 10;
+const STAKE_AMOUNT = 2;
 
 const PLAY_PRICE = 1;
 const TOKEN_RATIO = 10000;
 const PAYOUT_RATIO = 95;
-//const PAY_AMOUNT = "1";
-// const GUESS = true; //true = heads, false = tails
 
 async function main() {
   // Connect to the network
@@ -63,7 +61,7 @@ async function main() {
   const tokenFactory = new CasinoToken__factory(signer);
   token = tokenFactory.attach(tokenAddress);
 
-  const nftAddress = await contract.token();
+  const nftAddress = await contract.nft();
   const nftFactory = new CasinoPassport__factory(signer);
   nft = nftFactory.attach(nftAddress);
 
