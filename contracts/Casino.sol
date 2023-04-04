@@ -4,6 +4,7 @@ pragma solidity >=0.7.0 <0.9.0;
 //import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {CasinoToken} from "./CasinoToken.sol";
+import {CasinoPassport} from "./CasinoPassport.sol";
 
 /// @title A casino contract
 /// @author Team 7 - Encode Bootcampo Early
@@ -12,6 +13,8 @@ import {CasinoToken} from "./CasinoToken.sol";
 contract Casino is Ownable {
     /// @notice Address of the token used as payment for the play
     CasinoToken public paymentToken;
+    /// @notice Address of the NFT required toplay
+    CasinoPasport public nft;
     /// @notice Amount of tokens given per ETH paid
     uint256 public purchaseRatio;
     /// @notice Amount of tokens required for 1 single play
@@ -19,6 +22,8 @@ contract Casino is Ownable {
     /// @notice Amount of tokens in the prize pool
     uint256 public prizePool;
 
+    /// @notice Feature flag for NFT requirement
+    boolean public nftRequired;
 
     //event FlipResult(bool result, address player);
 
@@ -32,18 +37,32 @@ contract Casino is Ownable {
     constructor(
         string memory tokenName,
         string memory tokenSymbol,
+        string memory nftName,
+        string memory nftSymbol,
         uint256 _purchaseRatio,
         uint256 _playPrice,
         uint256 _prizePool
     ) {
         paymentToken = new CasinoToken(tokenName, tokenSymbol);
-        //paymentToken = new CasinoToken();
+        nft = new CasinoPasport(nftName, nftSymbol);
         purchaseRatio = _purchaseRatio;
         playPrice = _playPrice;
         prizePool = _prizePool;
-       
+        nftRequired = false;
     }
 
+    modifier nftRequired() {
+        if (nftRequired) {
+            require(nft.balanceOf(msg.sender) >= 0, "A casino NFT is required to play.");
+            require(msg.sender == owner, "You need to be of legal age to gamble at this casino.");
+        }
+        _;
+    }
+
+    /// @notice Gives tokens based on the amount of ETH sent
+    function nftVerificationFeatureFlag(bool required) external onlyOwner {
+        nftRequired = required;
+    }
 
     /// @notice Gives tokens based on the amount of ETH sent
     function purchaseTokens() external payable {
