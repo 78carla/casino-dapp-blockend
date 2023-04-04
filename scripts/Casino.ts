@@ -53,7 +53,7 @@ async function main() {
   //const contractFactory = new Lottery__factory(accounts[0]);
   const contractFactory = new Casino__factory(signer);
   const contract = contractFactory.attach(
-    "0xb75692bf109a1E5850f0e677eea93cdFFA2195af"
+    "0x40f4977532aA06aDacfe135Ed101caD969d9d435"
   );
 
   const tokenAddress = await contract.token();
@@ -101,9 +101,9 @@ async function main() {
   const allowTxReceipt = await allowTx.wait();
   console.log("Allowance confirmed at block", allowTxReceipt.blockNumber, "\n");
 
-  const buyNFTTx = await contract.connect(signer).purchaseNft();
-  const buyNFTReceipt = await buyNFTTx.wait();
-  console.log("BOUGHT NFT");
+  // const buyNFTTx = await contract.connect(signer).purchaseNft();
+  // const buyNFTReceipt = await buyNFTTx.wait();
+  // console.log("BOUGHT NFT");
 
   //Play the game and flip the coin
   const flipTx = await contract.connect(signer).flipCoin();

@@ -21,10 +21,9 @@ let signer;
 const BUY_AMOUNT = 100;
 const STAKE_AMOUNT = 10;
 
-const PLAY_PRICE = 0.001;
-const PRIZE_POOL = 100;
+const PLAY_PRICE = 1;
 const TOKEN_RATIO = 10000;
-const NFT_PRICE = 20;
+const PAYOUT_RATIO = 95;
 //const PAY_AMOUNT = "1";
 // const GUESS = true; //true = heads, false = tails
 
@@ -57,7 +56,7 @@ async function main() {
   contract = await contractFactory.deploy(
     TOKEN_RATIO,
     ethers.utils.parseEther(PLAY_PRICE.toFixed(18)),
-    NFT_PRICE
+    PAYOUT_RATIO
   );
 
   const tokenAddress = await contract.token();
@@ -141,7 +140,7 @@ console.log("Allowance confirmed at block", allowTxReceipt.blockNumber, "\n");
       contract.address
     } "${TOKEN_RATIO}" "${ethers.utils.parseEther(
       PLAY_PRICE.toFixed(18)
-    )}" "${NFT_PRICE}"
+    )}" "${PAYOUT_RATIO}"
     `
   );
 }

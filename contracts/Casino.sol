@@ -19,10 +19,10 @@ contract Casino is Ownable {
 
     /// @notice Amount of tokens given per ETH paid
     uint256 public purchaseRatio;
+    /// @notice Payout ratio of winning bets.
+    uint256 public payoutRatio;
     /// @notice Amount of tokens required for 1 single play
     uint256 public playPrice; 
-    /// @notice The price (in T7E tokens) for buying an NFT
-    uint256 public nftPrice;
     /// @notice Amount of tokens staked
     uint256 public stakedAmount;
 
@@ -46,13 +46,13 @@ contract Casino is Ownable {
     constructor(
         uint256 _purchaseRatio,
         uint256 _playPrice,
-        uint256 _nftPrice
+        uint256 _payoutRatio
     ) {
         nft = new CasinoPassport();
         token = new CasinoToken();
         purchaseRatio = _purchaseRatio;
         playPrice = _playPrice;
-        nftPrice = _nftPrice;
+        payoutRatio = _payoutRatio;
     }
 
     /* ========== MODIFIERS ========== */
@@ -97,6 +97,10 @@ contract Casino is Ownable {
             rewards[_account];
     }
 
+    function calculatePayout(uint256 value, uint256 multiplier) public view returns (uint256) {
+        return (value * multiplier * payoutRatio) / 100;
+    }
+
     /* ========== MUTATIVE FUNCTIONS ========== */
 
     function stake(uint _amount) external updateReward(msg.sender) {
@@ -120,13 +124,12 @@ contract Casino is Ownable {
 
     /// @notice Gives an NFT for a fixed amount of T7E tokens
     function purchaseNft() external {
-        require(token.transferFrom(msg.sender, address(this), nftPrice), "Not enough T7E balance to buy the NFT");
         nft.safeMint(msg.sender);
     }
 
     //Play the game - run the flip coin
     function flipCoin() external returns (string memory) {
-        uint256 payoutRate = 2;
+        uint256 multiplier = 2;
         require (totalSupply() >= playPrice, "Not enough T7E in the prize pool");
         require (token.balanceOf(msg.sender) >= playPrice, "Not enough T7E in your wallet");
         
@@ -135,9 +138,10 @@ contract Casino is Ownable {
         bool result = getRandomNumber() % 2 == 0 ? true: false ;
 
         if (result) {
+            uint256 payout = calculatePayout(playPrice, multiplier);
             // if the result is heads, transfer the payout to the player
-            token.approve(address(this), playPrice * payoutRate + 1);
-            token.transfer(msg.sender, playPrice * payoutRate); 
+            token.approve(address(this), payout + playPrice);
+            token.transfer(msg.sender, payout); 
             return "Head";
         }
         else {
