@@ -153,9 +153,9 @@ contract Casino is Ownable {
     function flipCoin() external returns (string memory) {
         uint256 payoutRate = 2;
         require (prizePool >= playPrice, "Not enough T7E in the prize pool");
-        require (paymentToken.balanceOf(msg.sender) >= playPrice, "Not enough T7E in your wallet");
+        require (token.balanceOf(msg.sender) >= playPrice, "Not enough T7E in your wallet");
         
-        paymentToken.transferFrom(msg.sender, address(this), playPrice); // transfer T7E tokens from player to contract
+        token.transferFrom(msg.sender, address(this), playPrice); // transfer T7E tokens from player to contract
         prizePool += playPrice;
         
         bool result = getRandomNumber() % 2 == 0 ? true: false ;
@@ -163,13 +163,14 @@ contract Casino is Ownable {
         if (result) {
             // if the result is heads, transfer the payout to the player
             prizePool -= playPrice * 2;
-            paymentToken.approve(address(this), playPrice * payoutRate);
-            paymentToken.transfer(msg.sender, playPrice * payoutRate); 
+            token.approve(address(this), playPrice * payoutRate);
+            token.transfer(msg.sender, playPrice * payoutRate); 
             return "Head";
         }
         else {
             return "Tails";
         }
+    }
         
     // /// @notice Withdraws `amount` from that accounts's prize pool
     // function prizeWithdraw(uint256 amount) external {
