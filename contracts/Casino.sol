@@ -19,7 +19,6 @@ contract Casino is Ownable {
     /// @notice Amount of tokens in the prize pool
     uint256 public prizePool;
 
-    string public coin;
 
     /// @notice Constructor function
     // /// @param tokenName Name of the token used for payment
@@ -39,11 +38,10 @@ contract Casino is Ownable {
         purchaseRatio = _purchaseRatio;
         playPrice = _playPrice;
         prizePool = _prizePool;
-       
     }
 
     //Mint some T7E tokens for the contract - it is the initial prizePool
-    function depositToken () external{
+    function depositToken () external onlyOwner {
         paymentToken.mint(address(this), prizePool);
     }
 
@@ -63,36 +61,32 @@ contract Casino is Ownable {
 
     //Play the game - run the flip coin
     function flipCoin() external returns (string memory) {
-        uint256 maxValue = type(uint256).max;
-
+        uint256 payoutRate = 2;
         require (prizePool >= playPrice, "Not enough T7E in the prize pool");
         require (paymentToken.balanceOf(msg.sender) >= playPrice, "Not enough T7E in your wallet");
         
-        paymentToken.approve(address(this), maxValue);
         paymentToken.transferFrom(msg.sender, address(this), playPrice); // transfer T7E tokens from player to contract
         prizePool += playPrice;
         
-        bool result = getRandomNumber(); // flip a coin to get the result
+        bool result = getRandomNumber() % 2 == 0 ? true: false ;
 
-        if (result==true) {
+        if (result) {
             // if the result is heads, transfer the payout to the player
             prizePool -= playPrice * 2;
-            paymentToken.transfer(msg.sender, playPrice * 2); 
-            return coin = "Heads"; 
-            
+            paymentToken.approve(address(this), playPrice * payoutRate);
+            paymentToken.transfer(msg.sender, playPrice * payoutRate); 
+            return "Head";
         }
-        else{
-            return coin = "Tails";   
-        } 
+        else {
+            return "Tails";
+        }
+        
     }
 
     /// @notice Returns a random number calculated from the previous block randao
     /// @dev This only works after The Merge
-    function getRandomNumber() public view returns (bool) {
-        uint256 randomNumber;
-        
+    function getRandomNumber() public view returns (uint256 randomNumber) {
         randomNumber = block.prevrandao;
-        return randomNumber % 2 == 0 ? false: true; // return true for heads (1) and false for tails (0)
     }
 
     // /// @notice Withdraws `amount` from that accounts's prize pool
