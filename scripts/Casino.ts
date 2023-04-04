@@ -25,6 +25,7 @@ const TOKEN_RATIO = 10000;
 const BUY_AMOUNT = 1;
 const AUTORIZED_AMOUNT = 2;
 const WITHDRAWAL_AMOUNT = 10;
+const STAKE_AMOUNT = 2;
 //const PAY_AMOUNT = "1";
 // const GUESS = true; //true = heads, false = tails
 
@@ -53,7 +54,7 @@ async function main() {
   //const contractFactory = new Lottery__factory(accounts[0]);
   const contractFactory = new Casino__factory(signer);
   const contract = contractFactory.attach(
-    "0x40f4977532aA06aDacfe135Ed101caD969d9d435"
+    "0x6B7Df6c8B03F82aa7bdeCfb34E7008147E18d095"
   );
 
   const tokenAddress = await contract.token();
@@ -89,6 +90,7 @@ async function main() {
   //   `The account ${signer.address} account has bought some tokens. Tokens bought at ${receiptBuy.transactionHash} transaction hash\n`
   // );
 
+
   //Check the T7E balance of the signer after the purchase
   const tokenBalanceBN = await token.balanceOf(signer.address);
   const tokenBalance = ethers.utils.formatEther(tokenBalanceBN);
@@ -101,12 +103,19 @@ async function main() {
   const allowTxReceipt = await allowTx.wait();
   console.log("Allowance confirmed at block", allowTxReceipt.blockNumber, "\n");
 
+
+    //Fund contract with T7E via staking
+  //stake some tokens
+  console.log("staking tokens");
+  const stakingTx = await contract.stake(ethers.utils.parseEther(STAKE_AMOUNT.toString()));
+  await stakingTx.wait();
+
   // const buyNFTTx = await contract.connect(signer).purchaseNft();
   // const buyNFTReceipt = await buyNFTTx.wait();
   // console.log("BOUGHT NFT");
 
   //Play the game and flip the coin
-  const flipTx = await contract.connect(signer).flipCoin();
+  const flipTx = await contract.connect(signer).flipCoinRigged();
   console.log("FLIP WAIT ");
   const flipTxReceipt = await flipTx.wait();
   console.log(
@@ -115,8 +124,49 @@ async function main() {
     "\n"
   );
 
+
   //Return the pool size after the play
   const prizePoolAfter = await contract.totalSupply();
+  console.log(
+    "After the Flip the Prize pool contains: ",
+    ethers.utils.formatEther(prizePoolAfter),
+    "T7E"
+  );
+
+  //Play the game and flip the coin
+  const flipTx2 = await contract.connect(signer).flipCoinRigged();
+  console.log("FLIP WAIT ");
+  const flipTxReceipt2 = await flipTx.wait();
+  console.log(
+    "The Flip was confermed at block number",
+    flipTxReceipt.blockNumber,
+    "\n"
+  );
+
+  //Return the pool size after the play
+  const prizePoolAfter2 = await contract.totalSupply();
+  console.log(
+    "After the Flip the Prize pool contains: ",
+    ethers.utils.formatEther(prizePoolAfter),
+    "T7E"
+  );
+  //Play the game and flip the coin
+  const flipTx3 = await contract.connect(signer).flipCoinRigged();
+  console.log("FLIP WAIT ");
+  const flipTxReceipt3 = await flipTx.wait();
+  console.log(
+    "The Flip was confermed at block number",
+    flipTxReceipt.blockNumber,
+    "\n"
+  );
+
+  //unstake some tokens
+  console.log("staking tokens");
+  const unstakingTx = await contract.unstake(ethers.utils.parseEther(STAKE_AMOUNT.toString()));
+  await unstakingTx.wait();
+
+  //Return the pool size after the play
+  const prizePoolAfter3 = await contract.totalSupply();
   console.log(
     "After the Flip the Prize pool contains: ",
     ethers.utils.formatEther(prizePoolAfter),

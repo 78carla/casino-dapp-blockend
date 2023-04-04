@@ -57,8 +57,8 @@ contract Casino is Ownable {
 
     /* ========== MODIFIERS ========== */
 
-    modifier nftRequired() {
-            require(nft.balanceOf(msg.sender) >= 0, "A casino NFT is required to play.");
+    modifier nftRequired {
+            require(nft.balanceOf(msg.sender) > 0, "A casino NFT is required to play.");
         _;
     }
 
@@ -80,7 +80,7 @@ contract Casino is Ownable {
     }
 
     function rewardPerToken() public view returns (uint256) {
-        if (this.totalSupply() == 0) {
+        if (stakedAmount <= 0 || this.totalSupply() <= 0) {
             return 0;
         }
         return (totalSupply() - stakedAmount) / stakedAmount;
@@ -97,8 +97,8 @@ contract Casino is Ownable {
             rewards[_account];
     }
 
-    function calculatePayout(uint256 value, uint256 multiplier) public view returns (uint256) {
-        return (value * multiplier * payoutRatio) / 100;
+    function calculatePayout(uint256 _value, uint256 _multiplier) private view returns (uint256) {
+        return (_value * _multiplier * payoutRatio) / 100;
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
@@ -114,6 +114,7 @@ contract Casino is Ownable {
         require(_amount > 0, "amount = 0");
         balanceOf[msg.sender] -= _amount;
         stakedAmount -= _amount;
+        token.approve(address(this), _amount + playPrice);
         token.transfer(msg.sender, _amount);
     }
 
@@ -128,37 +129,36 @@ contract Casino is Ownable {
     }
 
     //Play the game - run the flip coin
-    function flipCoin() external returns (string memory) {
+    function flipCoin(bool _heads) external nftRequired returns (string memory)  {
         uint256 multiplier = 2;
         require (totalSupply() >= playPrice, "Not enough T7E in the prize pool");
         require (token.balanceOf(msg.sender) >= playPrice, "Not enough T7E in your wallet");
         
         token.transferFrom(msg.sender, address(this), playPrice); // transfer T7E tokens from player to contract
         
-        bool result = getRandomNumber() % 2 == 0 ? true: false ;
+        bool result = getRandomNumber() % 2 == 0 ? _heads: !_heads ;
 
         if (result) {
             uint256 payout = calculatePayout(playPrice, multiplier);
             // if the result is heads, transfer the payout to the player
             token.approve(address(this), payout + playPrice);
             token.transfer(msg.sender, payout); 
-            return "Head";
         }
-        else {
-            return "Tails";
-        }
+        return result ? "Heads" : "Tails";
     }
+
+    function flipCoinRigged() external returns (string memory) {
+        require (totalSupply() >= playPrice, "Not enough T7E in the prize pool");
+        require (token.balanceOf(msg.sender) >= playPrice, "Not enough T7E in your wallet");
         
-    // /// @notice Withdraws `amount` from that accounts's prize pool
-    // function prizeWithdraw(uint256 amount) external {
-    //     require(amount <= prize[msg.sender], "Not enough prize");
-    //     prize[msg.sender] -= amount;
-    //     token.transfer(msg.sender, amount);
-    // }
+        token.transferFrom(msg.sender, address(this), playPrice); // transfer T7E tokens from player to contract
+        return "Tails";
+    }
 
     /// @notice Burns `amount` tokens and give the equivalent ETH back to user
-    function returnTokens(uint256 amount) external {
-        token.burnFrom(msg.sender, amount);
-        payable(msg.sender).transfer(amount / purchaseRatio);
+    function returnTokens(uint256 _amount) external {
+        require(_amount > 0, "amount = 0");
+        token.burnFrom(msg.sender, _amount);
+        payable(msg.sender).transfer(_amount / purchaseRatio);
     }
 }
