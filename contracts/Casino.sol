@@ -10,15 +10,31 @@ import {CasinoToken} from "./CasinoToken.sol";
 /// @notice You can use this contract for running a simple casino
 
 contract Casino is Ownable {
-    /// @notice Address of the token used as payment for the play
-    CasinoToken public paymentToken;
+    /// @notice Contract of the token used as payment for the play
+    CasinoToken public token;
     /// @notice Amount of tokens given per ETH paid
     uint256 public purchaseRatio;
-    /// @notice Amount of tokens required for 1 single play
-    uint256 public playPrice;
-    /// @notice Amount of tokens in the prize pool
-    uint256 public prizePool;
 
+
+    /// @notice Amount of tokens required for 1 single play
+    uint256 public playPrice; 
+
+    /// @notice Amount of tokens in the prize pool
+    uint256 public prizePool; 
+
+    // Casino profit for staking period
+    uint256 public casinoProfit;
+
+
+    // Sum of (reward rate * dt * 1e18 / total supply)
+    uint public rewardPerTokenStaked;
+    // User address => rewardPerTokenStaked
+    mapping(address => uint) public userRewardPerTokenPaid;
+    // User address => rewards to be claimed
+    mapping(address => uint) public rewards;
+
+    // User address => staked amount
+    mapping(address => uint) public balanceOf;
 
     //event FlipResult(bool result, address player);
 
@@ -36,38 +52,25 @@ contract Casino is Ownable {
         uint256 _playPrice,
         uint256 _prizePool
     ) {
-        paymentToken = new CasinoToken(tokenName, tokenSymbol);
-        //paymentToken = new CasinoToken();
+        token = new CasinoToken(tokenName, tokenSymbol);
         purchaseRatio = _purchaseRatio;
         playPrice = _playPrice;
         prizePool = _prizePool;
        
     }
 
+    /* ========== MODIFIERS ========== */
 
-    /// @notice Gives tokens based on the amount of ETH sent
-    function purchaseTokens() external payable {
-        paymentToken.mint(msg.sender, msg.value * purchaseRatio);
+    modifier updateReward(address _account) {
+        rewardPerTokenStaked = rewardPerToken();
+        if (_account != address(0)) {
+            rewards[_account] = earned(_account);
+            userRewardPerTokenPaid[_account] = rewardPerTokenStaked;
+        }
+        _;
     }
 
-
-    function flipCoin() external{
-        require (prizePool >= playPrice, "Not enough T7E in the prize pool");
-        paymentToken.transferFrom(msg.sender, address(this), playPrice); // transfer T7E tokens from player to contract
-        
-        bool result = getRandomNumber(); // flip a coin to get the result
-        //emit FlipResult(result, msg.sender); // log the result of the flip
-        if (result==false) {
-            // if the result is heads, transfer the payout to the player
-            prizePool -= playPrice * 2;
-            paymentToken.transfer(msg.sender, playPrice * 2); 
-        }
-        else {
-            prizePool += playPrice;
-        }
-        
-    }
-
+    /* ========== VIEWS ========== */
 
     /// @notice Returns a random number calculated from the previous block randao
     /// @dev This only works after The Merge
@@ -77,23 +80,79 @@ contract Casino is Ownable {
         return randomNumber % 2 == 0 ? false: true; // return true for heads (1) and false for tails (0)
     }
 
+    function rewardPerToken() public view returns (uint256) {
+        if (this.totalSupply() == 0) {
+            return 0;
+        }
+        return casinoProfit / this.totalSupply();
+    }
+
+    function totalSupply() public view returns (uint256) {
+
+        return (prizePool);
+    }
+
+    function earned(address _account) public view returns (uint) {
+        return
+            ((balanceOf[_account] *
+                (rewardPerToken() - userRewardPerTokenPaid[_account])) / 1e18) +
+            rewards[_account];
+    }
+
+    /* ========== MUTATIVE FUNCTIONS ========== */
+
+    function stake(uint _amount) external updateReward(msg.sender) {
+        require(_amount > 0, "amount = 0");
+        token.transferFrom(msg.sender, address(this), _amount);
+        balanceOf[msg.sender] += _amount;
+        prizePool += _amount;
+    }
+
+    function unstake(uint _amount) external updateReward(msg.sender) {
+        require(_amount > 0, "amount = 0");
+        balanceOf[msg.sender] -= _amount;
+        prizePool -= _amount;
+        token.transfer(msg.sender, _amount);
+    }
+
+    /// @notice Gives tokens based on the amount of ETH sent
+    function purchaseTokens() external payable {
+        token.mint(msg.sender, msg.value * purchaseRatio);
+    }
+
+    function flipCoin() external payable{
+        require (msg.value >= playPrice, "Not enough T7E sent");
+        require (prizePool >= playPrice, "Not enough T7E in the prize pool");
+        require (token.approve(address(this), msg.value),"Approve failed");
+        require(token.transferFrom(msg.sender, address(this), playPrice), "Payment failed"); // transfer T7E tokens from player to contract
+        
+        bool result = getRandomNumber(); // flip a coin to get the result
+        //emit FlipResult(result, msg.sender); // log the result of the flip
+        if (result==false) {
+            // if the result is heads, transfer the payout to the player
+            prizePool -= playPrice * 2;
+            
+            require(token.transfer(msg.sender, playPrice * 2), "Impossible to pay the win - Transfer failed");
+        
+    }
+
     // /// @notice Withdraws `amount` from that accounts's prize pool
     // function prizeWithdraw(uint256 amount) external {
     //     require(amount <= prize[msg.sender], "Not enough prize");
     //     prize[msg.sender] -= amount;
-    //     paymentToken.transfer(msg.sender, amount);
+    //     token.transfer(msg.sender, amount);
     // }
 
     /// @notice Withdraws `amount` from the prize pool - allowed by owner only
     function ownerWithdraw(uint256 amount) external onlyOwner {
         require(amount <= prizePool, "Not enough fees collected");
         prizePool -= amount;
-        paymentToken.transfer(msg.sender, amount);
+        token.transfer(msg.sender, amount);
     }
 
     /// @notice Burns `amount` tokens and give the equivalent ETH back to user
     function returnTokens(uint256 amount) external {
-        paymentToken.burnFrom(msg.sender, amount);
+        token.burnFrom(msg.sender, amount);
         payable(msg.sender).transfer(amount / purchaseRatio);
     }
 }
