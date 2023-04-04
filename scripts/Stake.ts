@@ -84,7 +84,7 @@ async function main() {
     tokenBalance = ethers.utils.formatEther(tokenBalanceBN);
     console.log(`The ${signer.address} account has ${tokenBalance} T7E\n`);
 
-    //stake some tokens
+    //unstake some tokens
     console.log("unstaking tokens");
     const unstakeTx = await contract.unstake(ethers.utils.parseEther(STAKE_AMOUNT.toString()));
     await unstakeTx.wait();

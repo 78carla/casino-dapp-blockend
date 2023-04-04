@@ -53,7 +53,7 @@ async function main() {
   //const contractFactory = new Lottery__factory(accounts[0]);
   const contractFactory = new Casino__factory(signer);
   const contract = contractFactory.attach(
-    "0xbdb9d04b614Fc3D780B2DFe6F570F6ccA3393E87"
+    "0x40f4977532aA06aDacfe135Ed101caD969d9d435"
   );
 
   const tokenAddress = await contract.token();
@@ -80,24 +80,19 @@ async function main() {
   const balance = ethers.utils.formatEther(balanceBN);
   console.log(`The ${signer.address} account has ${balance} ETH\n`);
 
-  //Buy some T7E tokens
-  const txBuy = await contract.connect(signer).purchaseTokens({
-    value: ethers.utils.parseEther(BUY_AMOUNT.toString()).div(TOKEN_RATIO),
-  });
-  const receiptBuy = await txBuy.wait();
-  console.log(
-    `The account ${signer.address} account has bought some tokens. Tokens bought at ${receiptBuy.transactionHash} transaction hash\n`
-  );
+  // //Buy some T7E tokens
+  // const txBuy = await contract.connect(signer).purchaseTokens({
+  //   value: ethers.utils.parseEther(BUY_AMOUNT.toString()).div(TOKEN_RATIO),
+  // });
+  // const receiptBuy = await txBuy.wait();
+  // console.log(
+  //   `The account ${signer.address} account has bought some tokens. Tokens bought at ${receiptBuy.transactionHash} transaction hash\n`
+  // );
 
   //Check the T7E balance of the signer after the purchase
   const tokenBalanceBN = await token.balanceOf(signer.address);
   const tokenBalance = ethers.utils.formatEther(tokenBalanceBN);
   console.log(`The ${signer.address} account has now ${tokenBalance} T7E\n`);
-
-  //Check the ETH balance of the signer after the purchase
-  const balanceBNBuy = await ethers.provider.getBalance(signer.address);
-  const balanceBuy = ethers.utils.formatEther(balanceBNBuy);
-  console.log(`The ${signer.address} account has now ${balanceBuy} ETH\n`);
 
   //The signer allows the Casino contract to spend the T7E tokens
   const allowTx = await token
@@ -106,25 +101,13 @@ async function main() {
   const allowTxReceipt = await allowTx.wait();
   console.log("Allowance confirmed at block", allowTxReceipt.blockNumber, "\n");
 
-  //Payment function used for testing purposes
-  // const payGameTx = await contract.connect(signer).payGame();
-  // const payGameTxReceipt = await payGameTx.wait();
-  // console.log("PayGame confirmed at block", payGameTxReceipt.blockNumber, "\n");
-
-  //Return the pool size before the play
-  const prizePoolBefore = await contract.prizePool();
-  console.log(
-    "The initial Prize pool contains: ",
-    ethers.utils.formatEther(prizePoolBefore),
-    "T7E"
-  );
-
-  //Returns the random number
-  const resultTx = await contract.getRandomNumber();
-  console.log("The Random number is: ", resultTx);
+  // const buyNFTTx = await contract.connect(signer).purchaseNft();
+  // const buyNFTReceipt = await buyNFTTx.wait();
+  // console.log("BOUGHT NFT");
 
   //Play the game and flip the coin
   const flipTx = await contract.connect(signer).flipCoin();
+  console.log("FLIP WAIT ");
   const flipTxReceipt = await flipTx.wait();
   console.log(
     "The Flip was confermed at block number",
@@ -133,7 +116,7 @@ async function main() {
   );
 
   //Return the pool size after the play
-  const prizePoolAfter = await contract.prizePool();
+  const prizePoolAfter = await contract.totalSupply();
   console.log(
     "After the Flip the Prize pool contains: ",
     ethers.utils.formatEther(prizePoolAfter),

@@ -19,20 +19,12 @@ contract Casino is Ownable {
 
     /// @notice Amount of tokens given per ETH paid
     uint256 public purchaseRatio;
-
-
+    /// @notice Payout ratio of winning bets.
+    uint256 public payoutRatio;
     /// @notice Amount of tokens required for 1 single play
     uint256 public playPrice; 
-
-    /// @notice Amount of tokens in the prize pool
-
-    uint256 public prizePool;
-    /// @notice The price (in T7E tokens) for buying an NFT
-    uint256 public nftPrice;
-
-    // Casino profit for staking period
-    uint256 public casinoProfit;
-
+    /// @notice Amount of tokens staked
+    uint256 public stakedAmount;
 
     // Sum of (reward rate * dt * 1e18 / total supply)
     uint public rewardPerTokenStaked;
@@ -40,7 +32,6 @@ contract Casino is Ownable {
     mapping(address => uint) public userRewardPerTokenPaid;
     // User address => rewards to be claimed
     mapping(address => uint) public rewards;
-
 
     // User address => staked amount
     mapping(address => uint) public balanceOf;
@@ -55,21 +46,16 @@ contract Casino is Ownable {
     constructor(
         uint256 _purchaseRatio,
         uint256 _playPrice,
-        uint256 _prizePool,
-        uint256 _nftPrice
+        uint256 _payoutRatio
     ) {
-
         nft = new CasinoPassport();
         token = new CasinoToken();
         purchaseRatio = _purchaseRatio;
         playPrice = _playPrice;
-        prizePool = _prizePool;
-        nftPrice = _nftPrice;
+        payoutRatio = _payoutRatio;
     }
 
     /* ========== MODIFIERS ========== */
-    //Mint some T7E tokens for the contract - it is the initial prizePool
-
 
     modifier nftRequired() {
             require(nft.balanceOf(msg.sender) >= 0, "A casino NFT is required to play.");
@@ -97,41 +83,38 @@ contract Casino is Ownable {
         if (this.totalSupply() == 0) {
             return 0;
         }
-        return casinoProfit / this.totalSupply();
+        return (totalSupply() - stakedAmount) / stakedAmount;
     }
 
     function totalSupply() public view returns (uint256) {
-
-        return (prizePool);
+        return token.balanceOf(address(this));
     }
 
-    function earned(address _account) public view returns (uint) {
+    function earned(address _account) public view returns (uint256) {
         return
             ((balanceOf[_account] *
                 (rewardPerToken() - userRewardPerTokenPaid[_account])) / 1e18) +
             rewards[_account];
     }
 
-    /* ========== MUTATIVE FUNCTIONS ========== */
+    function calculatePayout(uint256 value, uint256 multiplier) public view returns (uint256) {
+        return (value * multiplier * payoutRatio) / 100;
+    }
 
-    
+    /* ========== MUTATIVE FUNCTIONS ========== */
 
     function stake(uint _amount) external updateReward(msg.sender) {
         require(_amount > 0, "amount = 0");
         token.transferFrom(msg.sender, address(this), _amount);
         balanceOf[msg.sender] += _amount;
-        prizePool += _amount;
+        stakedAmount += _amount;
     }
 
     function unstake(uint _amount) external updateReward(msg.sender) {
         require(_amount > 0, "amount = 0");
         balanceOf[msg.sender] -= _amount;
-        prizePool -= _amount;
+        stakedAmount -= _amount;
         token.transfer(msg.sender, _amount);
-    }
-
-    function depositToken () external{
-        token.mint(address(this), prizePool);
     }
 
     /// @notice Gives tokens based on the amount of ETH sent
@@ -141,26 +124,24 @@ contract Casino is Ownable {
 
     /// @notice Gives an NFT for a fixed amount of T7E tokens
     function purchaseNft() external {
-        token.transferFrom(msg.sender, address(this), nftPrice);
         nft.safeMint(msg.sender);
     }
 
     //Play the game - run the flip coin
     function flipCoin() external returns (string memory) {
-        uint256 payoutRate = 2;
-        require (prizePool >= playPrice, "Not enough T7E in the prize pool");
+        uint256 multiplier = 2;
+        require (totalSupply() >= playPrice, "Not enough T7E in the prize pool");
         require (token.balanceOf(msg.sender) >= playPrice, "Not enough T7E in your wallet");
         
         token.transferFrom(msg.sender, address(this), playPrice); // transfer T7E tokens from player to contract
-        prizePool += playPrice;
         
         bool result = getRandomNumber() % 2 == 0 ? true: false ;
 
         if (result) {
+            uint256 payout = calculatePayout(playPrice, multiplier);
             // if the result is heads, transfer the payout to the player
-            prizePool -= playPrice * 2;
-            token.approve(address(this), playPrice * payoutRate);
-            token.transfer(msg.sender, playPrice * payoutRate); 
+            token.approve(address(this), payout + playPrice);
+            token.transfer(msg.sender, payout); 
             return "Head";
         }
         else {
@@ -174,13 +155,6 @@ contract Casino is Ownable {
     //     prize[msg.sender] -= amount;
     //     token.transfer(msg.sender, amount);
     // }
-
-    /// @notice Withdraws `amount` from the prize pool - allowed by owner only
-    function ownerWithdraw(uint256 amount) external onlyOwner {
-        require(amount <= prizePool, "Not enough fees collected");
-        prizePool -= amount;
-        token.transfer(msg.sender, amount);
-    }
 
     /// @notice Burns `amount` tokens and give the equivalent ETH back to user
     function returnTokens(uint256 amount) external {

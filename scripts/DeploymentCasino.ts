@@ -18,10 +18,12 @@ let nft: CasinoPassport;
 
 let signer;
 
-const PLAY_PRICE = 0.001;
-const PRIZE_POOL = 100;
+const BUY_AMOUNT = 100;
+const STAKE_AMOUNT = 10;
+
+const PLAY_PRICE = 1;
 const TOKEN_RATIO = 10000;
-const NFT_PRICE = 20;
+const PAYOUT_RATIO = 95;
 //const PAY_AMOUNT = "1";
 // const GUESS = true; //true = heads, false = tails
 
@@ -54,8 +56,7 @@ async function main() {
   contract = await contractFactory.deploy(
     TOKEN_RATIO,
     ethers.utils.parseEther(PLAY_PRICE.toFixed(18)),
-    ethers.utils.parseEther(PRIZE_POOL.toFixed(18)),
-    NFT_PRICE
+    PAYOUT_RATIO
   );
 
   const tokenAddress = await contract.token();
@@ -92,10 +93,35 @@ async function main() {
     "\n"
   );
 
-  //Deposit some T7E tokens to the contract
-  const depositTx = await contract.depositToken();
-  const depositTxReceipt = await depositTx.wait();
-  console.log("Deposit confirmed at block", depositTxReceipt.blockNumber, "\n");
+    //Buy some T7E tokens
+    // async function buyTokens(index: string, amount: string) {
+      const txBuy = await contract.connect(signer).purchaseTokens({
+        value: ethers.utils.parseEther(BUY_AMOUNT.toString()).div(TOKEN_RATIO),
+      });
+      const receiptBuy = await txBuy.wait();
+      console.log(
+        `Tokens bought at ${receiptBuy.transactionHash} transaction hash\n`
+      );
+
+  //Fund contract with T7E via staking
+  // const depositTx = await contract.depositToken();
+  const allowTx = await token
+  .connect(signer)
+  .approve(
+    contract.address,
+    ethers.utils.parseEther(STAKE_AMOUNT.toString())
+  );
+const allowTxReceipt = await allowTx.wait();
+console.log("Allowance confirmed at block", allowTxReceipt.blockNumber, "\n");
+
+    //stake some tokens
+    console.log("staking tokens");
+    const stakingTx = await contract.stake(ethers.utils.parseEther(STAKE_AMOUNT.toString()));
+    await stakingTx.wait();
+    const tokenBalanceBN = await contract.totalSupply();
+    const tokenBalance = ethers.utils.formatEther(tokenBalanceBN);
+
+    console.log(`The casino contract with address ${contract.address} has ${tokenBalance} T7E\n`);
 
   console.log(
     `Verify the Token contract with this command: \n
@@ -114,7 +140,7 @@ async function main() {
       contract.address
     } "${TOKEN_RATIO}" "${ethers.utils.parseEther(
       PLAY_PRICE.toFixed(18)
-    )}" "${ethers.utils.parseEther(PRIZE_POOL.toFixed(18))}" "${NFT_PRICE}"
+    )}" "${PAYOUT_RATIO}"
     `
   );
 }
