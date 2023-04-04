@@ -14,16 +14,16 @@ contract Casino is Ownable {
     /// @notice Address of the token used as payment for the play
     CasinoToken public paymentToken;
     /// @notice Address of the NFT required toplay
-    CasinoPasport public nft;
+    CasinoPassport public nft;
     /// @notice Amount of tokens given per ETH paid
     uint256 public purchaseRatio;
     /// @notice Amount of tokens required for 1 single play
     uint256 public playPrice;
     /// @notice Amount of tokens in the prize pool
     uint256 public prizePool;
+    /// @notice The price (in T7E tokens) for buying an NFT
+    uint256 public nftPrice;
 
-    /// @notice Feature flag for NFT requirement
-    boolean public nftRequired;
 
     //event FlipResult(bool result, address player);
 
@@ -41,27 +41,20 @@ contract Casino is Ownable {
         string memory nftSymbol,
         uint256 _purchaseRatio,
         uint256 _playPrice,
-        uint256 _prizePool
+        uint256 _prizePool,
+        uint256 _nftPrice
     ) {
         paymentToken = new CasinoToken(tokenName, tokenSymbol);
-        nft = new CasinoPasport(nftName, nftSymbol);
+        nft = new CasinoPassport(nftName, nftSymbol);
         purchaseRatio = _purchaseRatio;
         playPrice = _playPrice;
         prizePool = _prizePool;
-        nftRequired = false;
+        nftPrice = _nftPrice
     }
 
     modifier nftRequired() {
-        if (nftRequired) {
             require(nft.balanceOf(msg.sender) >= 0, "A casino NFT is required to play.");
-            require(msg.sender == owner, "You need to be of legal age to gamble at this casino.");
-        }
         _;
-    }
-
-    /// @notice Gives tokens based on the amount of ETH sent
-    function nftVerificationFeatureFlag(bool required) external onlyOwner {
-        nftRequired = required;
     }
 
     /// @notice Gives tokens based on the amount of ETH sent
@@ -69,8 +62,14 @@ contract Casino is Ownable {
         paymentToken.mint(msg.sender, msg.value * purchaseRatio);
     }
 
+    /// @notice Gives an NFT for a fixed amount of T7E tokens
+    function purchaseNft() external {
+        paymentToken.transferFrom(msg.sender, address(this), nftPrice);
+        nft.safeMint(msg.sender);
+    }
 
-    function flipCoin() external{
+
+    function flipCoin() external nftRequired {
         require (prizePool >= playPrice, "Not enough T7E in the prize pool");
         paymentToken.transferFrom(msg.sender, address(this), playPrice); // transfer T7E tokens from player to contract
         

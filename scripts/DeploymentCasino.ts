@@ -17,6 +17,8 @@ let signer;
 
 const TOKEN_NAME = "Team7Early";
 const TOKEN_SYMBOL = "T7E";
+const NFT_NAME = "Team7Early";
+const NFT_SYMBOL = "T7E";
 const PLAY_PRICE = 0.001;
 const PRIZE_POOL = 100;
 const TOKEN_RATIO = 10000;
@@ -52,6 +54,8 @@ async function main() {
   contract = await contractFactory.deploy(
     TOKEN_NAME,
     TOKEN_SYMBOL,
+    NFT_NAME,
+    NFT_SYMBOL,
     TOKEN_RATIO,
     ethers.utils.parseEther(PLAY_PRICE.toFixed(18)),
     ethers.utils.parseEther(PRIZE_POOL.toFixed(18))
@@ -78,15 +82,20 @@ async function main() {
     signer.address,
     "\n"
   );
+
   console.log(
     `Verify the Token contract with this command: \n
     npx hardhat verify --network sepolia ${token.address} "${TOKEN_NAME}" "${TOKEN_SYMBOL}"
-    `    
+    `
   );
   console.log(
     `Verify the Casino contract with this command: \n
-    npx hardhat verify --network sepolia ${contract.address} "${TOKEN_NAME}" "${TOKEN_SYMBOL}" "${TOKEN_RATIO}" "${ethers.utils.parseEther(PLAY_PRICE.toFixed(18))}" "${ethers.utils.parseEther(PRIZE_POOL.toFixed(18))}"
-    `    
+    npx hardhat verify --network sepolia ${
+      contract.address
+    } "${TOKEN_NAME}" "${TOKEN_SYMBOL}" "${TOKEN_RATIO}" "${ethers.utils.parseEther(
+      PLAY_PRICE.toFixed(18)
+    )}" "${ethers.utils.parseEther(PRIZE_POOL.toFixed(18))}"
+    `
   );
 }
 

@@ -11,12 +11,12 @@ contract CasinoPassport is ERC721, AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     Counters.Counter private _tokenIdCounter;
 
-    constructor() ERC721(string memory name, string memory symbo) {
+    constructor(string memory name, string memory symbol) ERC721(name, symbol) {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(MINTER_ROLE, msg.sender);
     }
 
-    function safeMint(address to, uint256 birthDate) public onlyRole(MINTER_ROLE) {
+    function safeMint(address to) public onlyRole(MINTER_ROLE) {
         uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
         _safeMint(to, tokenId);
