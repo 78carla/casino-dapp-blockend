@@ -18,11 +18,9 @@ contract Casino is Ownable {
 
     /// @notice Amount of tokens required for 1 single play
     uint256 public playPrice; 
-    // TODO: make this an input for games, maybe with Min/Max
 
     /// @notice Amount of tokens in the prize pool
     uint256 public prizePool; 
-    //TODO: can't we just do token.balance(address(this)) or something? This would return T7E balance for casino address
 
     // Casino profit for staking period
     uint256 public casinoProfit;
@@ -35,8 +33,6 @@ contract Casino is Ownable {
     // User address => rewards to be claimed
     mapping(address => uint) public rewards;
 
-    // Total staked
-    uint public totalStaked;
     // User address => staked amount
     mapping(address => uint) public balanceOf;
 
@@ -93,7 +89,7 @@ contract Casino is Ownable {
 
     function totalSupply() public view returns (uint256) {
 
-        return (casinoProfit + totalStaked);
+        return (prizePool);
     }
 
     function earned(address _account) public view returns (uint) {
@@ -103,22 +99,21 @@ contract Casino is Ownable {
             rewards[_account];
     }
 
-    /* ========== MODIFIERS ========== */
+    /* ========== MUTATIVE FUNCTIONS ========== */
 
     function stake(uint _amount) external updateReward(msg.sender) {
         require(_amount > 0, "amount = 0");
         token.transferFrom(msg.sender, address(this), _amount);
         balanceOf[msg.sender] += _amount;
-        totalStaked += _amount;
+        prizePool += _amount;
     }
 
     function unstake(uint _amount) external updateReward(msg.sender) {
         require(_amount > 0, "amount = 0");
         balanceOf[msg.sender] -= _amount;
-        totalStaked -= _amount;
+        prizePool -= _amount;
         token.transfer(msg.sender, _amount);
     }
-
 
     /// @notice Gives tokens based on the amount of ETH sent
     function purchaseTokens() external payable {

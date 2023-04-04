@@ -1,15 +1,13 @@
 //This script deploy an ERC20 token contract to the sepolia network
 import { ethers } from "hardhat";
-import {  Stake__factory, CasinoToken__factory, Casino__factory } from "../typechain-types";
+import { CasinoToken__factory, Casino__factory } from "../typechain-types";
 import * as dotenv from "dotenv";
 
 dotenv.config();
 
-const PLAY_PRICE = 0.001;
-const PRIZE_POOL = 100;
 const TOKEN_RATIO = 10000;
 const BUY_AMOUNT = 100;
-const AUTORIZED_AMOUNT = 2;
+const STAKE_AMOUNT = 10;
 
 async function main() {
   const args = process.argv;
@@ -32,7 +30,7 @@ async function main() {
   const signer = wallet.connect(provider);
 
   const casinoFactory = new Casino__factory(signer);
-  const contract = casinoFactory.attach("0x48e9D1d4a259E42bd9bd0485F4e57FEE44447163");
+  const contract = casinoFactory.attach("0x7509259D85F2362350258344A5019B2fD8DfE9ef");
   
   const tokenAddress = await contract.token();
   const tokenFactory = new CasinoToken__factory(signer);
@@ -72,26 +70,24 @@ async function main() {
     .connect(signer)
     .approve(
       contract.address,
-      ethers.utils.parseEther("10")
+      ethers.utils.parseEther(STAKE_AMOUNT.toString())
     );
   const allowTxReceipt = await allowTx.wait();
   console.log("Allowance confirmed at block", allowTxReceipt.blockNumber, "\n");
 
 
     //stake some tokens
-    const stakingTx = await contract.stake(ethers.utils.parseEther("10"));
-    console.log("stake wait");
+    console.log("staking tokens");
+    const stakingTx = await contract.stake(ethers.utils.parseEther(STAKE_AMOUNT.toString()));
     await stakingTx.wait();
-    console.log("stake done");
     tokenBalanceBN = await token.balanceOf(signer.address);
     tokenBalance = ethers.utils.formatEther(tokenBalanceBN);
     console.log(`The ${signer.address} account has ${tokenBalance} T7E\n`);
 
     //stake some tokens
-    const unstakeTx = await contract.unstake(ethers.utils.parseEther("20"));
-    console.log("stake wait");
+    console.log("unstaking tokens");
+    const unstakeTx = await contract.unstake(ethers.utils.parseEther(STAKE_AMOUNT.toString()));
     await unstakeTx.wait();
-    console.log("stake done");
     tokenBalanceBN = await token.balanceOf(signer.address);
     tokenBalance = ethers.utils.formatEther(tokenBalanceBN);
     console.log(`The ${signer.address} account has ${tokenBalance} T7E\n`);
