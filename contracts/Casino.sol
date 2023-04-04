@@ -4,14 +4,19 @@ pragma solidity >=0.7.0 <0.9.0;
 //import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {CasinoToken} from "./CasinoToken.sol";
+import {CasinoPassport} from "./CasinoPassport.sol";
 
 /// @title A casino contract
 /// @author Team 7 - Encode Bootcampo Early
 /// @notice You can use this contract for running a simple casino
 
 contract Casino is Ownable {
-    /// @notice Contract of the token used as payment for the play
+
+    /// @notice Address of the token used as payment for the play
     CasinoToken public token;
+    /// @notice Address of the NFT required toplay
+    CasinoPassport public nft;
+
     /// @notice Amount of tokens given per ETH paid
     uint256 public purchaseRatio;
 
@@ -20,7 +25,10 @@ contract Casino is Ownable {
     uint256 public playPrice; 
 
     /// @notice Amount of tokens in the prize pool
-    uint256 public prizePool; 
+
+    uint256 public prizePool;
+    /// @notice The price (in T7E tokens) for buying an NFT
+    uint256 public nftPrice;
 
     // Casino profit for staking period
     uint256 public casinoProfit;
@@ -32,6 +40,7 @@ contract Casino is Ownable {
     mapping(address => uint) public userRewardPerTokenPaid;
     // User address => rewards to be claimed
     mapping(address => uint) public rewards;
+
 
     // User address => staked amount
     mapping(address => uint) public balanceOf;
@@ -48,18 +57,28 @@ contract Casino is Ownable {
     constructor(
         string memory tokenName,
         string memory tokenSymbol,
+        string memory nftName,
+        string memory nftSymbol,
         uint256 _purchaseRatio,
         uint256 _playPrice,
-        uint256 _prizePool
+        uint256 _prizePool,
+        uint256 _nftPrice
     ) {
+
+        nft = new CasinoPassport(nftName, nftSymbol);
         token = new CasinoToken(tokenName, tokenSymbol);
         purchaseRatio = _purchaseRatio;
         playPrice = _playPrice;
         prizePool = _prizePool;
-       
+        nftPrice = _nftPrice
     }
 
     /* ========== MODIFIERS ========== */
+
+    modifier nftRequired() {
+            require(nft.balanceOf(msg.sender) >= 0, "A casino NFT is required to play.");
+        _;
+    }
 
     modifier updateReward(address _account) {
         rewardPerTokenStaked = rewardPerToken();
@@ -120,7 +139,15 @@ contract Casino is Ownable {
         token.mint(msg.sender, msg.value * purchaseRatio);
     }
 
-    function flipCoin() external payable{
+
+    /// @notice Gives an NFT for a fixed amount of T7E tokens
+    function purchaseNft() external {
+        token.transferFrom(msg.sender, address(this), nftPrice);
+        nft.safeMint(msg.sender);
+    }
+
+
+    function flipCoin() external nftRequired {
         require (msg.value >= playPrice, "Not enough T7E sent");
         require (prizePool >= playPrice, "Not enough T7E in the prize pool");
         require (token.approve(address(this), msg.value),"Approve failed");
