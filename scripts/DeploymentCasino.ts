@@ -2,10 +2,8 @@ import { ethers } from "hardhat";
 import {
   Casino,
   CasinoToken,
-  Staking,
   CasinoToken__factory,
   Casino__factory,
-  Staking__factory,
 } from "../typechain-types";
 
 import * as dotenv from "dotenv";
@@ -13,15 +11,15 @@ dotenv.config();
 
 let contract: Casino;
 let token: CasinoToken;
-let staking: Staking;
 //let accounts: SignerWithAddress[];
 
 let signer;
 
 const TOKEN_NAME = "Team7Early";
 const TOKEN_SYMBOL = "T7E";
-const NFT_NAME = "Team7Early";
-const NFT_SYMBOL = "T7E";
+const NFT_NAME = "Team7Passport";
+const NFT_SYMBOL = "T7P";
+const NFT_PRICE = 20;
 const PLAY_PRICE = 0.001;
 const PRIZE_POOL = 100;
 const TOKEN_RATIO = 10000;
@@ -61,7 +59,8 @@ async function main() {
     NFT_SYMBOL,
     TOKEN_RATIO,
     ethers.utils.parseEther(PLAY_PRICE.toFixed(18)),
-    ethers.utils.parseEther(PRIZE_POOL.toFixed(18))
+    ethers.utils.parseEther(PRIZE_POOL.toFixed(18)),
+    NFT_PRICE
   );
 
   const tokenContract = await contract.token();

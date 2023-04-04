@@ -70,7 +70,7 @@ contract Casino is Ownable {
         purchaseRatio = _purchaseRatio;
         playPrice = _playPrice;
         prizePool = _prizePool;
-        nftPrice = _nftPrice
+        nftPrice = _nftPrice;
     }
 
     /* ========== MODIFIERS ========== */
@@ -147,7 +147,7 @@ contract Casino is Ownable {
     }
 
 
-    function flipCoin() external nftRequired {
+    function flipCoin() external nftRequired payable {
         require (msg.value >= playPrice, "Not enough T7E sent");
         require (prizePool >= playPrice, "Not enough T7E in the prize pool");
         require (token.approve(address(this), msg.value),"Approve failed");
@@ -160,7 +160,7 @@ contract Casino is Ownable {
             prizePool -= playPrice * 2;
             
             require(token.transfer(msg.sender, playPrice * 2), "Impossible to pay the win - Transfer failed");
-        
+        }
     }
 
     // /// @notice Withdraws `amount` from that accounts's prize pool
