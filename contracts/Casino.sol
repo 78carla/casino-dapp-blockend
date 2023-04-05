@@ -26,15 +26,18 @@ contract Casino is Ownable {
     /// @notice Amount of tokens staked
     uint256 public stakedAmount;
 
-    // Sum of (reward rate * dt * 1e18 / total supply)
-    uint public rewardPerTokenStaked;
-    // User address => rewardPerTokenStaked
-    mapping(address => uint) public userRewardPerTokenPaid;
-    // User address => rewards to be claimed
-    mapping(address => uint) public rewards;
+    // // Sum of (reward rate * dt * 1e18 / total supply)
+    // uint public rewardPerTokenStaked;
+    // // User address => rewardPerTokenStaked
+    // mapping(address => uint) public userRewardPerTokenPaid;
+    // // User address => rewards to be claimed
+    // mapping(address => uint) public rewards;
 
     // User address => staked amount
-    mapping(address => uint) public balanceOf;
+    mapping(address => uint256) public balanceOf;
+
+    // User address => Balances at moment of staking: [0] totalSupply,  [1] stakedAmount
+    mapping(address => uint256[]) public casinoBalancesWhenStaked;
 
 
     /// @notice Constructor function
@@ -62,15 +65,6 @@ contract Casino is Ownable {
         _;
     }
 
-    modifier updateReward(address _account) {
-        rewardPerTokenStaked = rewardPerToken();
-        if (_account != address(0)) {
-            rewards[_account] = earned(_account);
-            userRewardPerTokenPaid[_account] = rewardPerTokenStaked;
-        }
-        _;
-    }
-
     /* ========== VIEWS ========== */
 
     /// @notice Returns a random number calculated from the previous block randao
@@ -79,22 +73,15 @@ contract Casino is Ownable {
         randomNumber = block.prevrandao;
     }
 
-    function rewardPerToken() public view returns (uint256) {
-        if (stakedAmount <= 0 || this.totalSupply() <= 0) {
+    function balanceOfWithRewards() public view returns (uint256 balance) {
+        if (stakedAmount == 0) {
             return 0;
         }
-        return (totalSupply() - stakedAmount) / stakedAmount;
+        balance =  (this.totalSupply() * balanceOf[msg.sender] / stakedAmount);
     }
 
     function totalSupply() public view returns (uint256) {
         return token.balanceOf(address(this));
-    }
-
-    function earned(address _account) public view returns (uint256) {
-        return
-            ((balanceOf[_account] *
-                (rewardPerToken() - userRewardPerTokenPaid[_account])) / 1e18) +
-            rewards[_account];
     }
 
     function calculatePayout(uint256 _value, uint256 _multiplier) private view returns (uint256) {
@@ -103,19 +90,45 @@ contract Casino is Ownable {
 
     /* ========== MUTATIVE FUNCTIONS ========== */
 
-    function stake(uint _amount) external updateReward(msg.sender) {
+    function stake(uint _amount) external {
         require(_amount > 0, "amount = 0");
-        token.transferFrom(msg.sender, address(this), _amount);
-        balanceOf[msg.sender] += _amount;
-        stakedAmount += _amount;
+        require(balanceOfWithRewards() >= balanceOf[msg.sender], "Cannot stake with negative pending rewards");
+
+        // Add any pending rewards to the staking amount. 
+        uint256 pendingRewards = balanceOfWithRewards() - balanceOf[msg.sender];
+        uint256 amount = _amount + pendingRewards;
+
+        // // Log the totalSupply without the msg.sender's current stake and pending rewards
+        // casinoBalancesWhenStaked[msg.sender][0] = totalSupply() - balanceOf[msg.sender] - pendingRewards;
+        // // Log the stakedAmount without the msg.sender's current stake
+        // casinoBalancesWhenStaked[msg.sender][1] = stakedAmount - balanceOf[msg.sender];
+
+        token.transferFrom(msg.sender, address(this), amount);
+        balanceOf[msg.sender] += amount;
+        stakedAmount += amount;
     }
 
-    function unstake(uint _amount) external updateReward(msg.sender) {
-        require(_amount > 0, "amount = 0");
-        balanceOf[msg.sender] -= _amount;
-        stakedAmount -= _amount;
-        token.approve(address(this), _amount + playPrice);
-        token.transfer(msg.sender, _amount);
+    // function unstake(uint _amount) external updateBalanceWhenStaked(msg.sender) {
+    //     require(_amount > 0, "amount = 0");
+
+    //     // If there are rewards to be claimed. 
+    //     amount = _amount;
+    //     if (balanceOfWithRewards(msg.sender) > balanceOf(msg.sender)) {
+    //         amount += (balanceOfWithRewards(msg.sender) - balanceOf(msg.sender))
+    //     };
+
+    //     stakedAmount[msg.sender] -= amount;
+    //     stakedAmount -= amount;
+    //     token.approve(address(this), amount + playPrice);
+    //     token.transfer(msg.sender, amount);
+    // }
+
+    function unstakeAll() external {
+        uint256 amount = balanceOfWithRewards();
+        balanceOf[msg.sender] -= amount;
+        stakedAmount -= amount;
+        token.approve(address(this), amount + playPrice);
+        token.transfer(msg.sender, amount);
     }
 
     /// @notice Gives tokens based on the amount of ETH sent
