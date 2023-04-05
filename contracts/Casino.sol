@@ -36,8 +36,10 @@ contract Casino is Ownable {
     // User address => staked amount
     mapping(address => uint256) public balanceOf;
 
-    // User address => Balances at moment of staking: [0] totalSupply,  [1] stakedAmount
-    mapping(address => uint256[]) public casinoBalancesWhenStaked;
+    // User address => Balances at moment of staking
+    mapping(address => uint256) public totalSupplyWhenStaked;
+    mapping(address => uint256) public stakedAmountWhenStaked;
+    
 
 
     /// @notice Constructor function
@@ -73,11 +75,11 @@ contract Casino is Ownable {
         randomNumber = block.prevrandao;
     }
 
-    function balanceOfWithRewards() public view returns (uint256 balance) {
+    function balanceOfWithRewards(address account) public view returns (uint256 balance) {
         if (stakedAmount == 0) {
             return 0;
         }
-        balance =  (this.totalSupply() * balanceOf[msg.sender] / stakedAmount);
+        balance =  (this.totalSupply() * balanceOf[account] / stakedAmount);
     }
 
     function totalSupply() public view returns (uint256) {
@@ -92,16 +94,16 @@ contract Casino is Ownable {
 
     function stake(uint _amount) external {
         require(_amount > 0, "amount = 0");
-        require(balanceOfWithRewards() >= balanceOf[msg.sender], "Cannot stake with negative pending rewards");
+        require(balanceOfWithRewards(msg.sender) >= balanceOf[msg.sender], "Cannot stake with negative pending rewards");
 
         // Add any pending rewards to the staking amount. 
-        uint256 pendingRewards = balanceOfWithRewards() - balanceOf[msg.sender];
+        uint256 pendingRewards = balanceOfWithRewards(msg.sender) - balanceOf[msg.sender];
         uint256 amount = _amount + pendingRewards;
 
         // // Log the totalSupply without the msg.sender's current stake and pending rewards
-        // casinoBalancesWhenStaked[msg.sender][0] = totalSupply() - balanceOf[msg.sender] - pendingRewards;
+        totalSupplyWhenStaked[msg.sender] = totalSupply() - balanceOf[msg.sender] - pendingRewards;
         // // Log the stakedAmount without the msg.sender's current stake
-        // casinoBalancesWhenStaked[msg.sender][1] = stakedAmount - balanceOf[msg.sender];
+        stakedAmountWhenStaked[msg.sender] = stakedAmount - balanceOf[msg.sender];
 
         token.transferFrom(msg.sender, address(this), amount);
         balanceOf[msg.sender] += amount;
@@ -124,7 +126,15 @@ contract Casino is Ownable {
     // }
 
     function unstakeAll() external {
-        uint256 amount = balanceOfWithRewards();
+        uint256 amount = balanceOfWithRewards(msg.sender);
+        token.approve(address(this), amount + playPrice);
+        token.transfer(msg.sender, amount);
+        balanceOf[msg.sender] = 0;
+        stakedAmount = 0;
+    }
+
+    function unstake(uint256 amount) external {
+    // ?    uint256 amount = balanceOfWithRewards();
         balanceOf[msg.sender] -= amount;
         stakedAmount -= amount;
         token.approve(address(this), amount + playPrice);
