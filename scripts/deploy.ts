@@ -19,7 +19,7 @@ let nft: CasinoPassport;
 let signer;
 
 const BUY_AMOUNT = 100;
-const STAKE_AMOUNT = 2;
+const STAKE_AMOUNT = 10;
 
 const PLAY_PRICE = 1;
 const TOKEN_RATIO = 10000;
@@ -101,16 +101,13 @@ async function main() {
         `Tokens bought at ${receiptBuy.transactionHash} transaction hash\n`
       );
 
-  //Fund contract with T7E via staking
-  // const depositTx = await contract.depositToken();
+  //The signer allows the Casino contract to spend the T7E tokens
   const allowTx = await token
-  .connect(signer)
-  .approve(
-    contract.address,
-    ethers.utils.parseEther(STAKE_AMOUNT.toString())
-  );
-const allowTxReceipt = await allowTx.wait();
-console.log("Allowance confirmed at block", allowTxReceipt.blockNumber, "\n");
+    .connect(signer)
+    .approve(contract.address, ethers.constants.MaxUint256);
+  const allowTxReceipt = await allowTx.wait();
+  console.log("Allowance confirmed at block", allowTxReceipt.blockNumber, "\n");
+
 
     //stake some tokens
     console.log("staking tokens");
@@ -141,6 +138,26 @@ console.log("Allowance confirmed at block", allowTxReceipt.blockNumber, "\n");
     )}" "${PAYOUT_RATIO}"
     `
   );
+
+  
+
+  //Play the game and flip the coin
+  const flipTx3 = await contract.connect(signer).flipCoin(true);
+  console.log("FLIP WAIT ");
+  const flipTxReceipt3 = await flipTx3.wait();
+  console.log(
+    "The Flip was confermed at block number",
+    flipTxReceipt3.blockNumber,
+    "\n"
+  );
+
+  //unstake some tokens
+  console.log("unstaking tokens");
+  // const unstakingTx = await contract.unstake(ethers.utils.parseEther(STAKE_AMOUNT.toString()));
+  const unstakingTx = await contract.unstakeAll();
+  await unstakingTx.wait();
+
+
 }
 
 main().catch((error) => {

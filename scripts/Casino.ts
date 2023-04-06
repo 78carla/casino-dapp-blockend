@@ -136,10 +136,10 @@ async function main() {
   //Play the game and flip the coin
   const flipTx2 = await contract.connect(signer).flipCoinRigged();
   console.log("FLIP WAIT ");
-  const flipTxReceipt2 = await flipTx.wait();
+  const flipTxReceipt2 = await flipTx2.wait();
   console.log(
     "The Flip was confermed at block number",
-    flipTxReceipt.blockNumber,
+    flipTxReceipt2.blockNumber,
     "\n"
   );
 
@@ -153,16 +153,17 @@ async function main() {
   //Play the game and flip the coin
   const flipTx3 = await contract.connect(signer).flipCoinRigged();
   console.log("FLIP WAIT ");
-  const flipTxReceipt3 = await flipTx.wait();
+  const flipTxReceipt3 = await flipTx3.wait();
   console.log(
     "The Flip was confermed at block number",
-    flipTxReceipt.blockNumber,
+    flipTxReceipt3.blockNumber,
     "\n"
   );
 
   //unstake some tokens
   console.log("staking tokens");
-  const unstakingTx = await contract.unstake(ethers.utils.parseEther(STAKE_AMOUNT.toString()));
+  // const unstakingTx = await contract.unstake(ethers.utils.parseEther(STAKE_AMOUNT.toString()));
+  const unstakingTx = await contract.unstakeAll();
   await unstakingTx.wait();
 
   //Return the pool size after the play
