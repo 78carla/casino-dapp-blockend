@@ -99,7 +99,7 @@ async function main() {
     `Verify the nft  contract using: ${VERIFY_COMMAND} ${NETWORK_NAME} ${nft.address} `
   );
   console.log(
-    `Verify the casino contract using: ${VERIFY_COMMAND} ${NETWORK_NAME} "${TOKEN_RATIO}" "${ethers.utils.parseEther(PLAY_PRICE.toFixed(18))}" "${PAYOUT_RATIO}"
+    `Verify the casino contract using: ${VERIFY_COMMAND} ${NETWORK_NAME} ${contract.address} "${TOKEN_RATIO}" "${ethers.utils.parseEther(PLAY_PRICE.toFixed(18))}" "${PAYOUT_RATIO}"
     `
   );
 }
