@@ -139,16 +139,16 @@ contract Casino is Ownable {
     }
 
     //Play the game - run the flip coin
-    function flipCoin(bool _heads) external nftRequired returns (string memory)  {
+    function flipCoin(bool _heads) external returns (string memory)  {
         uint256 multiplier = 2;
         require (totalSupply() >= betSize, "Not enough T7E in the prize pool");
         require (token.balanceOf(msg.sender) >= betSize, "Not enough T7E in your wallet");
         
         token.transferFrom(msg.sender, address(this), betSize); // transfer T7E tokens from player to contract
-        
+
         bool result = getRandomNumber() % 2 == 0 ? _heads: !_heads ;
 
-        if (result) {
+        if (result == _heads) {
             uint256 payout = calculatePayout(betSize, multiplier);
             // if the result is heads, transfer the payout to the player
             token.approve(address(this), payout + betSize);
