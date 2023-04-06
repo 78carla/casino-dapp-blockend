@@ -146,7 +146,7 @@ contract Casino is Ownable {
         
         token.transferFrom(msg.sender, address(this), betSize); // transfer T7E tokens from player to contract
 
-        bool result = getRandomNumber() % 2 == 0 ? _heads: !_heads ;
+        bool result = getRandomNumber() % 2 == 0 ? true: false ;
 
         if (result == _heads) {
             uint256 payout = calculatePayout(betSize, multiplier);
