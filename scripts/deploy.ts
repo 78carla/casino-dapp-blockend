@@ -142,7 +142,7 @@ async function main() {
   
 
   //Play the game and flip the coin
-  const flipTx3 = await contract.connect(signer).flipCoinWinning();
+  const flipTx3 = await contract.connect(signer).flipCoin(true);
   console.log("FLIP WAIT ");
   const flipTxReceipt3 = await flipTx3.wait();
   console.log(
