@@ -110,35 +110,33 @@ contract Casino is Ownable {
         stakedAmount += amount;
     }
 
-    // function unstake(uint _amount) external updateBalanceWhenStaked(msg.sender) {
-    //     require(_amount > 0, "amount = 0");
+    function unstake(uint256 _amount) external {
+        require(balanceOfWithRewards(msg.sender) >= balanceOf[msg.sender], "Cannot unstake with negative pending rewards");
 
-    //     // If there are rewards to be claimed. 
-    //     amount = _amount;
-    //     if (balanceOfWithRewards(msg.sender) > balanceOf(msg.sender)) {
-    //         amount += (balanceOfWithRewards(msg.sender) - balanceOf(msg.sender))
-    //     };
+        // Add any pending rewards to the unstaking amount. 
+        uint256 pendingRewards = balanceOfWithRewards(msg.sender) - balanceOf[msg.sender];
+        uint256 amountWithRewards = _amount + pendingRewards;
 
-    //     stakedAmount[msg.sender] -= amount;
-    //     stakedAmount -= amount;
-    //     token.approve(address(this), amount + playPrice);
-    //     token.transfer(msg.sender, amount);
-    // }
+
+        // // Log the totalSupply without the msg.sender's current stake and pending rewards
+        totalSupplyWhenStaked[msg.sender] = totalSupply() - balanceOf[msg.sender] - pendingRewards;
+        // // Log the stakedAmount without the msg.sender's current stake
+        stakedAmountWhenStaked[msg.sender] = stakedAmount - balanceOf[msg.sender];
+
+
+        token.approve(address(this), amountWithRewards);
+        token.transfer(msg.sender, amountWithRewards);
+
+        balanceOf[msg.sender] -= _amount;
+        stakedAmount -= _amount;
+    }
 
     function unstakeAll() external {
         uint256 amount = balanceOfWithRewards(msg.sender);
-        token.approve(address(this), amount + playPrice);
+        token.approve(address(this), amount);
         token.transfer(msg.sender, amount);
+        stakedAmount -= balanceOf[msg.sender];
         balanceOf[msg.sender] = 0;
-        stakedAmount = 0;
-    }
-
-    function unstake(uint256 amount) external {
-    // ?    uint256 amount = balanceOfWithRewards();
-        balanceOf[msg.sender] -= amount;
-        stakedAmount -= amount;
-        token.approve(address(this), amount + playPrice);
-        token.transfer(msg.sender, amount);
     }
 
     /// @notice Gives tokens based on the amount of ETH sent
@@ -176,6 +174,20 @@ contract Casino is Ownable {
         
         token.transferFrom(msg.sender, address(this), playPrice); // transfer T7E tokens from player to contract
         return "Tails";
+    }
+
+    function flipCoinWinning() external returns (string memory) {
+        uint256 multiplier = 2;
+        require (totalSupply() >= playPrice, "Not enough T7E in the prize pool");
+        require (token.balanceOf(msg.sender) >= playPrice, "Not enough T7E in your wallet");
+        
+        token.transferFrom(msg.sender, address(this), playPrice); // transfer T7E tokens from player to contract
+
+        uint256 payout = calculatePayout(playPrice, multiplier);
+        // if the result is heads, transfer the payout to the player
+        token.approve(address(this), payout + playPrice);
+        token.transfer(msg.sender, payout); 
+        return "Heads";
     }
 
     /// @notice Burns `amount` tokens and give the equivalent ETH back to user
