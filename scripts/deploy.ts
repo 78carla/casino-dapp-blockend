@@ -18,8 +18,8 @@ let nft: CasinoPassport;
 
 let signer;
 
-const BUY_AMOUNT = 100;
-const STAKE_AMOUNT = 10;
+const VERIFY_COMMAND = "\n npx hardhat verify --network "
+const NETWORK_NAME = "maticmum"
 
 const PLAY_PRICE = 1;
 const TOKEN_RATIO = 10000;
@@ -28,7 +28,7 @@ const PAYOUT_RATIO = 95;
 async function main() {
   // Connect to the network
   const provider = new ethers.providers.InfuraProvider(
-    "sepolia",
+    NETWORK_NAME,
     process.env.INFURA_API_KEY_SEPOLIA
   );
 
@@ -91,73 +91,17 @@ async function main() {
     "\n"
   );
 
-    //Buy some T7E tokens
-    // async function buyTokens(index: string, amount: string) {
-      const txBuy = await contract.connect(signer).purchaseTokens({
-        value: ethers.utils.parseEther(BUY_AMOUNT.toString()).div(TOKEN_RATIO),
-      });
-      const receiptBuy = await txBuy.wait();
-      console.log(
-        `Tokens bought at ${receiptBuy.transactionHash} transaction hash\n`
-      );
-
-  //The signer allows the Casino contract to spend the T7E tokens
-  const allowTx = await token
-    .connect(signer)
-    .approve(contract.address, ethers.constants.MaxUint256);
-  const allowTxReceipt = await allowTx.wait();
-  console.log("Allowance confirmed at block", allowTxReceipt.blockNumber, "\n");
-
-
-    //stake some tokens
-    console.log("staking tokens");
-    const stakingTx = await contract.stake(ethers.utils.parseEther(STAKE_AMOUNT.toString()));
-    await stakingTx.wait();
-    const tokenBalanceBN = await contract.totalSupply();
-    const tokenBalance = ethers.utils.formatEther(tokenBalanceBN);
-
-    console.log(`The casino contract with address ${contract.address} has ${tokenBalance} T7E\n`);
+  console.log(
+    `Verify the token contract using: ${VERIFY_COMMAND} ${NETWORK_NAME} ${token.address} `
+  );
 
   console.log(
-    `Verify the Token contract with this command: \n
-    npx hardhat verify --network sepolia ${token.address} 
+    `Verify the nft  contract using: ${VERIFY_COMMAND} ${NETWORK_NAME} ${nft.address} `
+  );
+  console.log(
+    `Verify the casino contract using: ${VERIFY_COMMAND} ${NETWORK_NAME} "${TOKEN_RATIO}" "${ethers.utils.parseEther(PLAY_PRICE.toFixed(18))}" "${PAYOUT_RATIO}"
     `
   );
-
-  console.log(
-    `Verify the NFT contract with this command: \n
-    npx hardhat verify --network sepolia ${nft.address} 
-    `
-  );
-  console.log(
-    `Verify the Casino contract with this command: \n
-    npx hardhat verify --network sepolia ${
-      contract.address
-    } "${TOKEN_RATIO}" "${ethers.utils.parseEther(
-      PLAY_PRICE.toFixed(18)
-    )}" "${PAYOUT_RATIO}"
-    `
-  );
-
-  
-
-  //Play the game and flip the coin
-  const flipTx3 = await contract.connect(signer).flipCoin(true);
-  console.log("FLIP WAIT ");
-  const flipTxReceipt3 = await flipTx3.wait();
-  console.log(
-    "The Flip was confermed at block number",
-    flipTxReceipt3.blockNumber,
-    "\n"
-  );
-
-  //unstake some tokens
-  console.log("unstaking tokens");
-  // const unstakingTx = await contract.unstake(ethers.utils.parseEther(STAKE_AMOUNT.toString()));
-  const unstakingTx = await contract.unstakeAll();
-  await unstakingTx.wait();
-
-
 }
 
 main().catch((error) => {
