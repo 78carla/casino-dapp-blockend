@@ -9,6 +9,7 @@ const MINT_VALUE = ethers.utils.parseEther("0.5");
 const TOKEN_RATIO = 10000;
 const PLAY_PRICE = 1;
 const PAYOUT_RATIO = 95;
+const STAKE_AMOUNT = ethers.utils.parseEther("2");
 
 // function convertStringArrayToBytes32(array: string[]) {
 //   const bytes32Array = [];
@@ -17,6 +18,34 @@ const PAYOUT_RATIO = 95;
 //   }
 //   return bytes32Array;
 // }
+
+
+
+async function allow(contract, wallet, spender, value) {
+  const tx = await contract.connect(wallet).approve(spender.address, value);
+  return tx.wait();  
+}
+
+async function buyTokens(contract, wallet, value) {
+  const tx = await contract.connect(wallet).purchaseTokens({value: value});
+  return tx.wait();  
+}
+
+async function stakeTokens(contract, wallet, value) {
+  const tx = await contract.connect(wallet).stake(value);
+  return tx.wait();  
+}
+
+async function unstakeAll(contract, wallet) {
+  const tx = await contract.connect(wallet).unstakeAll();
+  return tx.wait();  
+}
+
+async function flipCoin(contract, wallet, value) {
+  const tx = await contract.connect(wallet).flipCoin(value);
+  return tx.wait();  
+}
+
 
 describe("Casino", function () {
     let tokenContract: CasinoToken;
@@ -68,8 +97,7 @@ describe("Casino", function () {
     beforeEach(async function () {
         tokenBalanceAccount1BeforeMint = await tokenContract.balanceOf(account1.address);
         ethBalanceAccount1BeforeMint = await account1.getBalance();
-        const mintTx = await casinoContract.connect(account1).purchaseTokens({value: MINT_VALUE});
-        const mintTxReceipt = await mintTx.wait();
+        const mintTxReceipt = await buyTokens(casinoContract, account1, MINT_VALUE);
         gasCosts = mintTxReceipt.gasUsed.mul(mintTxReceipt.effectiveGasPrice);
         tokenBalanceAccount1AfterMint = await tokenContract.balanceOf(account1.address);
         ethBalanceAccount1AfterMint = await account1.getBalance();
@@ -84,79 +112,125 @@ describe("Casino", function () {
     });
   });
 
-  describe("when an account wins a bet gambles", function () {
-    let tokenBalanceAccount1BeforeMint: BigNumber;
-    let ethBalanceAccount1BeforeMint: BigNumber;
-    let tokenBalanceAccount1AfterMint: BigNumber;
-    let ethBalanceAccount1AfterMint: BigNumber;
+  describe("when an account makes a bet", function () {
+    let tokenBalanceAccount1Before: BigNumber;
+    let tokenBalanceAccount1After: BigNumber;
     let gasCosts: BigNumber;
+    const payout = ethers.utils.parseEther(PLAY_PRICE.toString()).mul(2).mul(PAYOUT_RATIO).div(100);
+    const playPrice = ethers.utils.parseEther(PLAY_PRICE.toString());
     beforeEach(async function () {
-        const mintTx = await casinoContract.connect(account1).purchaseTokens({value: MINT_VALUE});
-        await mintTx.wait();
-        tokenBalanceAccount1BeforeMint = await tokenContract.balanceOf(account1.address);
-        ethBalanceAccount1BeforeMint = await account1.getBalance();
 
-        const allowTx = await tokenContract.connect(account1).approve(casinoContract.address, PLAY_PRICE);
-        await allowTx.wait();
-        
-        const gambleTx = await casinoContract.connect(account1).flipCoin(true);
-        const gambleTxReceipt = await gambleTx.wait();
+      // prep for gamble
+        await buyTokens(casinoContract, account1, MINT_VALUE);
+        await allow(tokenContract, account1, casinoContract, STAKE_AMOUNT);
+        await stakeTokens(casinoContract, account1, STAKE_AMOUNT);
+        await allow(tokenContract, account1, casinoContract, STAKE_AMOUNT);
+        tokenBalanceAccount1Before = await tokenContract.balanceOf(account1.address);
+        const gambleTxReceipt = await flipCoin(casinoContract, account1, false);
         gasCosts = gambleTxReceipt.gasUsed.mul(gambleTxReceipt.effectiveGasPrice);
-        console.log(gasCosts);
-        tokenBalanceAccount1AfterMint = await tokenContract.balanceOf(account1.address);
-        ethBalanceAccount1AfterMint = await account1.getBalance();
+        tokenBalanceAccount1After = await tokenContract.balanceOf(account1.address);
       });
-    it("receive the correct amount of tokens", async function () {
-        const diff = tokenBalanceAccount1AfterMint.sub(tokenBalanceAccount1BeforeMint);        
-        expect(diff).to.eq(MINT_VALUE.mul(0));
-    });
-    it("is charged the correct amount of ether", async function () {
-        const diff = ethBalanceAccount1BeforeMint.sub(ethBalanceAccount1AfterMint);
-        expect(diff).to.eq(MINT_VALUE.add(0));
-    });
+      it("receive the correct amount of after win or loss", async function () {
+          // if win
+          if (tokenBalanceAccount1After > tokenBalanceAccount1Before) {
+            console.log("WINNER");
+            const diff = tokenBalanceAccount1After.sub(tokenBalanceAccount1Before);
+            expect(diff).to.eq(payout.sub(playPrice));
+          }
+          // else lose
+          else {
+            console.log("LOSER");
+            const diff = tokenBalanceAccount1Before.sub(tokenBalanceAccount1After);
+          }
+      });
   });
 
-//   describe("when an account self delegates ", function () {
-//     let votePowerAccount1: BigNumber;
-//     beforeEach(async function () {
-//         const delegateTx = await tokenContract.connect(account1).delegate(account1.address);
-//         const delegateTxReceipt = await delegateTx.wait();
-//         votePowerAccount1 = await tokenContract.getVotes(account1.address);
-//       });
-//     it("has the correct voting power", async () => {
-//         expect(votePowerAccount1).to.eq(MINT_VALUE);
-//     });
-//     it("compare the historical voting power before and after self delegating", async () => {
-//         const currentBlock = await ethers.provider.getBlock("latest");
-//         const votePowerAccount1Historically = await tokenContract.getPastVotes(account1.address, currentBlock.number-1);
-//         const diff = votePowerAccount1.sub(votePowerAccount1Historically);
-//         expect(diff).to.eq(MINT_VALUE);
-//         expect(votePowerAccount1Historically).to.eq(0);
-//     });
-//   });
-// });
+  describe("when the casino makes a profit", function () {
+    let tokenBalanceAccount1Before: BigNumber;
+    let tokenBalanceAccount1After: BigNumber;
+    let casinoBalanceBefore: BigNumber;
+    let casinoBalanceAfter: BigNumber;
+    let gasCosts: BigNumber;
+    beforeEach(async function () {
 
-//   describe("when an account transfer the tokens", function () {
-//     // TODO
-//     it("has the correct voting power", async () => {
-//       throw Error("Not implemented");
-//     });
-//   });
-//   // TODO
-//   it("compare the historical voting power before and after the transfer", async () => {
-//     throw Error("Not implemented");
-//   });
+        await buyTokens(casinoContract, deployer, MINT_VALUE);
+        await buyTokens(casinoContract, account1, MINT_VALUE);
 
-//   describe("when an account casts their votes", function () {
-//     // TODO
-//     it("winning proposal is X", async () => {
-//       throw Error("Not implemented");
-//     });
-//     it("voting power is decreased by number of votes", async () => {
-//       throw Error("Not implemented");
-//     });
-//     });
-//     it("transferring tokens does not effect the votes that have been cast", async () => {
-//     throw Error("Not implemented");
-//     });
+        tokenBalanceAccount1Before = await tokenContract.balanceOf(account1.address);
+
+        await allow(tokenContract, account1, casinoContract, ethers.constants.MaxUint256);
+        await stakeTokens(casinoContract, account1, ethers.utils.parseEther("20"));
+        
+        // Move Tokens to casino contract to simulate profits.
+        const fakeProfitTx = await tokenContract.connect(deployer).transfer(casinoContract.address, ethers.utils.parseEther("5"));
+        const fakeProfitTxReceipt = await fakeProfitTx.wait();
+        
+        await unstakeAll(casinoContract, account1);
+        tokenBalanceAccount1After = await tokenContract.balanceOf(account1.address);
+        
+      });
+      it("accounts receives the right staking rewards", async function () {
+        const diff = tokenBalanceAccount1After.sub(tokenBalanceAccount1Before);
+        expect(diff).to.eq(ethers.utils.parseEther("5"));
+      });
+
+  });
+
+  // TODO: implement more sophisticated staking test cases
+  
+  // describe("when multiple accounts make a staking profit", function () {
+  //   let tokenBalanceAccount0Before: BigNumber;
+  //   let tokenBalanceAccount0After: BigNumber;
+  //   let tokenBalanceAccount1Before: BigNumber;
+  //   let tokenBalanceAccount1After: BigNumber;
+  //   let tokenBalanceAccount2Before: BigNumber;
+  //   let tokenBalanceAccount2After: BigNumber;
+  //   let gasCosts: BigNumber;
+  //   beforeEach(async function () {
+
+  //       await buyTokens(casinoContract, deployer, MINT_VALUE);
+  //       await buyTokens(casinoContract, account1, MINT_VALUE);
+  //       await buyTokens(casinoContract, account2, MINT_VALUE);
+
+  //       tokenBalanceAccount0Before = await tokenContract.balanceOf(deployer.address);
+  //       tokenBalanceAccount1Before = await tokenContract.balanceOf(account1.address);
+  //       tokenBalanceAccount2Before = await tokenContract.balanceOf(account2.address);
+
+  //       // All accounts stake tokens
+  //       await allow(tokenContract, deployer, casinoContract, ethers.constants.MaxUint256);
+  //       await stakeTokens(casinoContract, deployer, ethers.utils.parseEther("1"));
+  //       await allow(tokenContract, account1, casinoContract, ethers.constants.MaxUint256);
+  //       await stakeTokens(casinoContract, account1, ethers.utils.parseEther("5"));
+  //       await allow(tokenContract, account2, casinoContract, ethers.constants.MaxUint256);
+  //       await stakeTokens(casinoContract, account2, ethers.utils.parseEther("20"));
+
+        
+  //       // Move Tokens to casino contract to simulate profits.
+  //       const fakeProfitTx = await tokenContract.connect(deployer).transfer(casinoContract.address, ethers.utils.parseEther("5"));
+  //       const fakeProfitTxReceipt = await fakeProfitTx.wait();
+  //       await unstakeAll(casinoContract, deployer);
+  //       await unstakeAll(casinoContract, account1);
+  //       await unstakeAll(casinoContract, account2);
+  //       tokenBalanceAccount0After = await tokenContract.balanceOf(deployer.address);
+  //       tokenBalanceAccount1After = await tokenContract.balanceOf(account1.address);
+  //       tokenBalanceAccount2After = await tokenContract.balanceOf(account2.address);
+        
+  //     });
+  //     it("all accounts receive the right staking rewards", async function () {
+  //       console.log(tokenBalanceAccount2After);
+  //       console.log(tokenBalanceAccount2Before);
+  //       const diff = tokenBalanceAccount2After.sub(tokenBalanceAccount2Before);
+  //       expect(diff).to.eq(0);
+  //     });
+  //     // it("all accounts receive the right staking rewards", async function () {
+  //     //   const diff = tokenBalanceAccount1After.sub(tokenBalanceAccount1Before);
+  //     //   expect(diff).to.eq(0);
+  //     // });
+  //     // it("all accounts receive the right staking rewards", async function () {
+  //     //   const diff = tokenBalanceAccount2After.sub(tokenBalanceAccount2Before);
+  //     //   expect(diff).to.eq(0);
+  //     // });
+  // });
+
+
   });
