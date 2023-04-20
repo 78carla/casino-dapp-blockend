@@ -43,7 +43,7 @@ const config: HardhatUserConfig = {
       },
     },
   },
-  paths: { tests: "tests" },
+  paths: { tests: "test" },
   etherscan: {
     apiKey: process.env.POLYGONSCAN_API_KEY as string,
   },
